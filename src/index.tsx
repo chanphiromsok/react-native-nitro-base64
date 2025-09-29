@@ -11,5 +11,10 @@ export function decode(base64: string): string {
 export function encode(input: string): string {
   return NitroBase64HybridObject.encode(input);
 }
-
+export function base64FromArrayBuffer(arrayBuffer: string): string {
+  return NitroBase64HybridObject.base64FromArrayBuffer(arrayBuffer, true);
+}
+export function base64ToArrayBuffer(base64String: string): string {
+  return NitroBase64HybridObject.base64ToArrayBuffer(base64String, false);
+}
 export default NitroBase64HybridObject;

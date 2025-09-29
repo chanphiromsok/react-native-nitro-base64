@@ -2,13 +2,17 @@
 
 #include "HybridNitroBase64Spec.hpp"
 #include "simdutf.h"
+#include "base64.h"
 
 namespace margelo::nitro::nitrobase64 {
     using namespace margelo::nitro;
 
     class NitroBase64 : public HybridNitroBase64Spec {
-    public: NitroBase64() : HybridObject(TAG) {}
-        std::string encode(const std::string &input) override {
+    public:
+        NitroBase64() : HybridObject(TAG) {}
+
+        std::string
+        encode(const std::string &input) override {
             // Calculate the required buffer size for base64 encoding
             size_t base64_size = simdutf::base64_length_from_binary(input.size());
 
@@ -26,7 +30,8 @@ namespace margelo::nitro::nitrobase64 {
             return std::string(encoded_buffer.data(), actual_size);
         }
 
-        std::string decode(const std::string &base64) override {
+        std::string
+        decode(const std::string &base64) override {
             // Calculate the maximum possible decoded size
             size_t max_decoded_size = simdutf::maximal_binary_length_from_base64(base64.data(),
                                                                                  base64.size());
@@ -47,6 +52,28 @@ namespace margelo::nitro::nitrobase64 {
 
             // Return decoded string with actual length
             return std::string(decoded_buffer.data(), result.count);
+        }
+
+        // Equivalent to JSI base64FromArrayBuffer function
+        std::string base64FromArrayBuffer(const std::string &arrayBuffer, bool urlSafe = false) override {
+            try {
+                return base64_encode(arrayBuffer, urlSafe);
+            } catch (const std::exception& e) {
+                throw std::runtime_error(std::string("Base64 encoding error: ") + e.what());
+            } catch (...) {
+                throw std::runtime_error("Unknown encoding error");
+            }
+        }
+
+        // Equivalent to JSI base64ToArrayBuffer function
+        std::string base64ToArrayBuffer(const std::string &base64String, bool removeLinebreaks = false) override {
+            try {
+                return base64_decode(base64String, removeLinebreaks);
+            } catch (const std::exception& e) {
+                throw std::runtime_error(std::string("Base64 decoding error: ") + e.what());
+            } catch (...) {
+                throw std::runtime_error("Unknown decoding error");
+            }
         }
 
     private:
