@@ -4,6 +4,12 @@ import type { NitroBase64 } from './NitroBase64.nitro';
 const NitroBase64HybridObject =
   NitroModules.createHybridObject<NitroBase64>('NitroBase64');
 
-export function multiply(a: number, b: number): number {
-  return NitroBase64HybridObject.multiply(a, b);
+export function decode(base64: string): string {
+  return NitroBase64HybridObject.decode(base64);
 }
+
+export function encode(input: string): string {
+  return NitroBase64HybridObject.encode(input);
+}
+
+export default NitroBase64HybridObject;

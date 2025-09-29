@@ -1,12 +1,11 @@
-import { Text, View, StyleSheet } from 'react-native';
-import { multiply } from 'react-native-nitro-base64';
-
-const result = multiply(3, 7);
-
+import { StyleSheet, View } from 'react-native';
+import Benchmarks from './Benchmark';
+import Benchmarks2 from './Benchmark2';
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Result: {result}</Text>
+      <Benchmarks />
+      <Benchmarks2 />
     </View>
   );
 }

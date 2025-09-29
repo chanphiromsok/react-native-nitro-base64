@@ -5,12 +5,11 @@
   },
   "android": {
     "androidNamespace": ["nitrobase64"],
-    "androidCxxLibName": "nitrobase64"
+    "androidCxxLibName": "NitroBase64"
   },
   "autolinking": {
     "NitroBase64": {
-      "swift": "NitroBase64",
-      "kotlin": "NitroBase64"
+      "cpp": "NitroBase64"
     }
   },
   "ignorePaths": ["node_modules"]

@@ -1,11 +1,11 @@
 package com.margelo.nitro.nitrobase64
 
-import com.facebook.react.TurboReactPackage
+import com.facebook.react.BaseReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.model.ReactModuleInfoProvider
 
-class NitroBase64Package : TurboReactPackage() {
+class NitroBase64Package : BaseReactPackage() {
     override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
         return null
     }
@@ -16,7 +16,7 @@ class NitroBase64Package : TurboReactPackage() {
 
     companion object {
         init {
-            System.loadLibrary("nitrobase64")
+            System.loadLibrary("NitroBase64")
         }
     }
 }

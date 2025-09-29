@@ -26,5 +26,9 @@ Pod::Spec.new do |s|
   load 'nitrogen/generated/ios/NitroBase64+autolinking.rb'
   add_nitrogen_files(s)
 
+if respond_to?(:install_modules_dependencies, true)
   install_modules_dependencies(s)
+else
+  s.dependency "React-Core"
+end
 end
