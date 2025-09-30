@@ -1,39 +1,57 @@
-# react-native-nitro-base64
+# NitroBase64
 
-NitroModule Base64
+A high-performance, cross-platform Base64 encoding/decoding module for React Native, powered by C++ and simdutf. Implements WHATWG forgiving-base64 and supports both standard and URL-safe variants.
+
+## Features
+- Fast C++ implementation using [simdutf](https://github.com/simdutf/simdutf)
+- WHATWG forgiving-base64 compliance (removes whitespace, optional padding)
+- Supports both standard and URL-safe base64
+- Consistent API for iOS and Android
+- Detailed error handling
 
 ## Installation
 
-
 ```sh
-npm install react-native-nitro-base64 react-native-nitro-modules
-
-> `react-native-nitro-modules` is required as this library relies on [Nitro Modules](https://nitro.margelo.com/).
+yarn add react-native-nitro-base64
 ```
 
+### Linking
+This module uses [react-native-nitro-modules](https://github.com/mrousavy/nitro). Follow Nitro's setup instructions for autolinking and native builds.
+
+## API
+
+```typescript
+export interface NitroBase64 extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
+  encode(input: string, urlSafe: boolean): string;
+  decode(base64: string, urlSafe: boolean): string;
+}
+```
+
+- `encode(input: string, urlSafe: boolean): string` — Encodes binary data to base64. Set `urlSafe` to `true` for base64url encoding.
+- `decode(base64: string, urlSafe: boolean): string` — Decodes base64 (WHATWG forgiving) to binary. Set `urlSafe` to `true` for base64url decoding.
 
 ## Usage
 
+```typescript
+import { encode,decode } from 'react-native-nitro-base64';
 
-```js
-import { multiply } from 'react-native-nitro-base64';
+const encoded = encode('Hello World!', false); // "SGVsbG8gV29ybGQh"
+const urlEncoded = encode('Hello World!', true); // "SGVsbG8gV29ybGQh"
 
-// ...
-
-const result = multiply(3, 7);
+const decoded = decode(encoded, false); // "Hello World!"
+const urlDecoded = decode(urlEncoded, true); // "Hello World!"
 ```
 
+## Platform Support
+- **iOS:** C++ implementation via simdutf
+- **Android:** C++ implementation via simdutf
 
-## Contributing
-
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
+## Error Handling
+Throws descriptive errors for invalid base64 input, remainder issues, or extra bits in padding.
 
 ## License
-
 MIT
 
----
-
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+## Credits
+- [simdutf](https://github.com/simdutf/simdutf)
+- [Nitro Modules](https://github.com/mrousavy/nitro)
