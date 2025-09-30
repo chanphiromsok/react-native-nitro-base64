@@ -1,11 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 // @ts-ignore
-import Benchmarks2 from './Benchmark2';
+import NitroBase64Demo from './Benchmark';
 export default function App() {
   return (
     <View style={styles.container}>
       {/* <Benchmarks /> */}
-      <Benchmarks2 />
+      <NitroBase64Demo />
     </View>
   );
 }
