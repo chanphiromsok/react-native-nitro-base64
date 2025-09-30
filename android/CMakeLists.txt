@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD 20)
 # Define your native library and add all sources
 add_library(${PACKAGE_NAME} SHARED
   src/main/cpp/cpp-adapter.cpp
-  ../cpp/base64.h
   ../cpp/simdutf.cpp
 )
 
