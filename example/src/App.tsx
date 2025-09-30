@@ -1,11 +1,10 @@
 import { StyleSheet, View } from 'react-native';
-import Benchmarks from './Benchmark';
 // @ts-ignore
 import Benchmarks2 from './Benchmark2';
 export default function App() {
   return (
     <View style={styles.container}>
-      <Benchmarks />
+      {/* <Benchmarks /> */}
       <Benchmarks2 />
     </View>
   );
