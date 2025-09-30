@@ -31,7 +31,8 @@
     "!**/__tests__",
     "!**/__fixtures__",
     "!**/__mocks__",
-    "!**/.*"
+    "!**/.*",
+    "!example"
   ],
   "scripts": {
     "example": "yarn workspace react-native-nitro-base64-example",
@@ -50,7 +51,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com.git"
+    "url": "git+https://github.com/chanphiromsok/react-native-nitro-base64"
   },
   "author": "ASS <chanphirom.sok@onego.asia> (https://github.com)",
   "license": "MIT",
