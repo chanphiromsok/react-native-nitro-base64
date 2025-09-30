@@ -2,6 +2,9 @@
 
 A high-performance, cross-platform Base64 encoding/decoding module for React Native, powered by C++ and simdutf. Implements WHATWG forgiving-base64 and supports both standard and URL-safe variants.
 
+| iPhone                                            | Android                                             |
+| ------------------------------------------------- | --------------------------------------------------- |
+| ![iPhone](./docs/ios.png) | ![Android](./docs/android.png) |
 ## Features
 - Fast C++ implementation using [simdutf](https://github.com/simdutf/simdutf)
 - WHATWG forgiving-base64 compliance (removes whitespace, optional padding)
