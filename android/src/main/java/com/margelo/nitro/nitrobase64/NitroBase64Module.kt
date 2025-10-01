@@ -3,6 +3,6 @@ package com.margelo.nitro.nitrobase64
 class NitroBase64Module: HybridNitroBase64ModuleSpec() {
 
   override fun install() {
-    System.loadLibrary("NitroBase64")
+    NitroBase64OnLoad.initializeNative()
   }
 }
