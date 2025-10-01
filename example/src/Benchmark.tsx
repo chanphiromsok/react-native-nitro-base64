@@ -1,15 +1,15 @@
-import { encode, decode } from 'react-native-nitro-base64';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-  View,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  Alert,
-  StyleSheet,
-  SafeAreaView,
+  View,
 } from 'react-native';
+import { decode, encode } from 'react-native-nitro-base64';
 
 const NitroBase64Demo = () => {
   const [inputText, setInputText] = useState('Hello OneGo! 🚗⚡');

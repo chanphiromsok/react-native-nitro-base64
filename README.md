@@ -25,15 +25,28 @@ This module uses [react-native-nitro-modules](https://github.com/mrousavy/nitro)
 
 ```typescript
 export interface NitroBase64 extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
+  install(): void;
   encode(input: string, urlSafe: boolean): string;
   decode(base64: string, urlSafe: boolean): string;
 }
 ```
 
+- `install(): void` — Initializes the native module for faster first-time encoding/decoding. Call this early in your app lifecycle via index.js or root
 - `encode(input: string, urlSafe: boolean): string` — Encodes binary data to base64. Set `urlSafe` to `true` for base64url encoding.
 - `decode(base64: string, urlSafe: boolean): string` — Decodes base64 (WHATWG forgiving) to binary. Set `urlSafe` to `true` for base64url decoding.
 
 ## Usage
+```javascript
+index.js
+import { install } from 'react-native-nitro-base64';
+import { AppRegistry } from 'react-native';
+import { install } from 'react-native-nitro-base64';
+import { name as appName } from './app.json';
+import App from './src/App';
+install(); // <=== Call
+AppRegistry.registerComponent(appName, () => App);
+
+
 
 ```typescript
 import { encode,decode } from 'react-native-nitro-base64';
