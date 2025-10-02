@@ -38,5 +38,5 @@ target 'NitroBase64Example' do
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.6'
       end
     end
-  endn
+  end
 end
