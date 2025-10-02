@@ -28,9 +28,8 @@ target_sources(
   ../nitrogen/generated/android/NitroBase64OnLoad.cpp
   # Shared Nitrogen C++ sources
   ../nitrogen/generated/shared/c++/HybridNitroBase64Spec.cpp
-  ../nitrogen/generated/shared/c++/HybridNitroBase64ModuleSpec.cpp
   # Android-specific Nitrogen C++ sources
-  ../nitrogen/generated/android/c++/JHybridNitroBase64ModuleSpec.cpp
+  
 )
 
 # Define a flag to check if we are building properly

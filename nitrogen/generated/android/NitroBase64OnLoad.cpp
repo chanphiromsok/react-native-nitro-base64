@@ -15,9 +15,7 @@
 #include <fbjni/fbjni.h>
 #include <NitroModules/HybridObjectRegistry.hpp>
 
-#include "JHybridNitroBase64ModuleSpec.hpp"
 #include "NitroBase64.hpp"
-#include <NitroModules/DefaultConstructableObject.hpp>
 
 namespace margelo::nitro::nitrobase64 {
 
@@ -28,7 +26,7 @@ int initialize(JavaVM* vm) {
 
   return facebook::jni::initialize(vm, [] {
     // Register native JNI methods
-    margelo::nitro::nitrobase64::JHybridNitroBase64ModuleSpec::registerNatives();
+    
 
     // Register Nitro Hybrid Objects
     HybridObjectRegistry::registerHybridObjectConstructor(
@@ -38,15 +36,6 @@ int initialize(JavaVM* vm) {
                       "The HybridObject \"NitroBase64\" is not default-constructible! "
                       "Create a public constructor that takes zero arguments to be able to autolink this HybridObject.");
         return std::make_shared<NitroBase64>();
-      }
-    );
-    HybridObjectRegistry::registerHybridObjectConstructor(
-      "NitroBase64Module",
-      []() -> std::shared_ptr<HybridObject> {
-        static DefaultConstructableObject<JHybridNitroBase64ModuleSpec::javaobject> object("com/margelo/nitro/nitrobase64/NitroBase64Module");
-        auto instance = object.create();
-        auto globalRef = jni::make_global(instance);
-        return globalRef->cthis()->shared();
       }
     );
   });

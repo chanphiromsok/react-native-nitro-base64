@@ -10,9 +10,6 @@
   "autolinking": {
     "NitroBase64": {
       "cpp": "NitroBase64"
-    },
-    "NitroBase64Module": {
-      "kotlin": "NitroBase64Module"
     }
   },
   "ignorePaths": ["node_modules"]

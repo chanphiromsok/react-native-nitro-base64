@@ -6,6 +6,6 @@ export interface NitroBase64
   decode(base64: string, urlSafe: boolean): string;
 }
 
-export interface NitroBase64Module extends HybridObject<{ android: 'kotlin' }> {
-  install(): void;
-}
+// export interface NitroBase64Module extends HybridObject<{ android: 'kotlin' }> {
+//   install(): void;
+// }
