@@ -14,6 +14,7 @@ namespace margelo::nitro::nitrobase64 {
     HybridObject::loadHybridMethods();
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
+      prototype.registerHybridMethod("install", &HybridNitroBase64Spec::install);
       prototype.registerHybridMethod("encode", &HybridNitroBase64Spec::encode);
       prototype.registerHybridMethod("decode", &HybridNitroBase64Spec::decode);
     });

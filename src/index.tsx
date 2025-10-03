@@ -14,7 +14,7 @@ export function encode(input: string, urlSafe = false): string {
   return NitroBase64HybridObject.encode(input, urlSafe);
 }
 
-// export function install(): void {
-//   NitroBase64ModuleHybridObject.install();
-// }
+export function install(): void {
+  NitroBase64HybridObject.install();
+}
 export default NitroBase64HybridObject;

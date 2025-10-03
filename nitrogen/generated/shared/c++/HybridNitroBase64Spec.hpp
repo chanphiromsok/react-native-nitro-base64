@@ -48,6 +48,7 @@ namespace margelo::nitro::nitrobase64 {
 
     public:
       // Methods
+      virtual void install() = 0;
       virtual std::string encode(const std::string& input, bool urlSafe) = 0;
       virtual std::string decode(const std::string& base64, bool urlSafe) = 0;
 
