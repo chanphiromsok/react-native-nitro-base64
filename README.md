@@ -16,6 +16,7 @@ A high-performance, cross-platform Base64 encoding/decoding module for React Nat
 
 ```sh
 yarn add react-native-nitro-base64
+yarn add react-native-nitro-modules@0.29.8
 ```
 
 ### Linking
