@@ -23,7 +23,7 @@ def reactNativeArchitectures() {
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 apply from: '../nitrogen/generated/android/NitroBase64+autolinking.gradle'
-
+apply from: "fix-prefab.gradle"
 // apply plugin: "com.facebook.react"
 
 def getExtOrIntegerDefault(name) {
