@@ -14,11 +14,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com.git", :tag => "#{s.version}" }
 
 
-  s.source_files = [
-    "ios/**/*.{swift}",
-    "ios/**/*.{m,mm}",
-    "cpp/**/*.{hpp,cpp}",
-  ]
+  s.source_files = ["cpp/**/*.{hpp,cpp}"]
 
   s.dependency 'React-jsi'
   s.dependency 'React-callinvoker'
