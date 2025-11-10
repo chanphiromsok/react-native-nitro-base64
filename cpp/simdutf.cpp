@@ -1,4 +1,4 @@
-/* auto-generated on 2025-09-10 16:01:38 -0400. Do not edit! */
+/* auto-generated on 2025-11-05 15:13:52 -0500. Do not edit! */
 /* begin file src/simdutf.cpp */
 #include "simdutf.h"
 
@@ -2705,6 +2705,9 @@ public:
           last_chunk_handling_options::loose) const noexcept;
   size_t binary_to_base64(const char *input, size_t length, char *output,
                           base64_options options) const noexcept;
+  size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                     char *output, size_t line_length,
+                                     base64_options options) const noexcept;
   const char *find(const char *start, const char *end,
                    char character) const noexcept;
   const char16_t *find(const char16_t *start, const char16_t *end,
@@ -4130,6 +4133,9 @@ public:
           last_chunk_handling_options::loose) const noexcept;
   size_t binary_to_base64(const char *input, size_t length, char *output,
                           base64_options options) const noexcept;
+  size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                     char *output, size_t line_length,
+                                     base64_options options) const noexcept;
   const char *find(const char *start, const char *end,
                    char character) const noexcept;
   const char16_t *find(const char16_t *start, const char16_t *end,
@@ -4462,6 +4468,9 @@ public:
           last_chunk_handling_options::loose) const noexcept;
   size_t binary_to_base64(const char *input, size_t length, char *output,
                           base64_options options) const noexcept;
+  size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                     char *output, size_t line_length,
+                                     base64_options options) const noexcept;
   const char *find(const char *start, const char *end,
                    char character) const noexcept;
   const char16_t *find(const char16_t *start, const char16_t *end,
@@ -5477,6 +5486,9 @@ public:
           last_chunk_handling_options::loose) const noexcept;
   size_t binary_to_base64(const char *input, size_t length, char *output,
                           base64_options options) const noexcept;
+  size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                     char *output, size_t line_length,
+                                     base64_options options) const noexcept;
   const char *find(const char *start, const char *end,
                    char character) const noexcept;
   const char16_t *find(const char16_t *start, const char16_t *end,
@@ -6466,6 +6478,9 @@ public:
   size_t binary_to_base64(const char *input, size_t length, char *output,
                           base64_options options) const noexcept;
 
+  size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                     char *output, size_t line_length,
+                                     base64_options options) const noexcept;
   const char *find(const char *start, const char *end,
                    char character) const noexcept;
 
@@ -7994,6 +8009,9 @@ public:
   size_t binary_to_base64(const char *input, size_t length, char *output,
                           base64_options options) const noexcept;
 
+  size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                     char *output, size_t line_length,
+                                     base64_options options) const noexcept;
   const char *find(const char *start, const char *end,
                    char character) const noexcept;
   const char16_t *find(const char16_t *start, const char16_t *end,
@@ -8237,6 +8255,9 @@ public:
           last_chunk_handling_options::loose) const noexcept;
   size_t binary_to_base64(const char *input, size_t length, char *output,
                           base64_options options) const noexcept;
+  size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                     char *output, size_t line_length,
+                                     base64_options options) const noexcept;
   const char *find(const char *start, const char *end,
                    char character) const noexcept;
   const char16_t *find(const char16_t *start, const char16_t *end,
@@ -9327,6 +9348,9 @@ public:
           last_chunk_handling_options::loose) const noexcept;
   size_t binary_to_base64(const char *input, size_t length, char *output,
                           base64_options options) const noexcept;
+  size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                     char *output, size_t line_length,
+                                     base64_options options) const noexcept;
   const char *find(const char *start, const char *end,
                    char character) const noexcept;
   const char16_t *find(const char16_t *start, const char16_t *end,
@@ -10636,6 +10660,9 @@ public:
           last_chunk_handling_options::loose) const noexcept;
   size_t binary_to_base64(const char *input, size_t length, char *output,
                           base64_options options) const noexcept;
+  size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                     char *output, size_t line_length,
+                                     base64_options options) const noexcept;
   const char *find(const char *start, const char *end,
                    char character) const noexcept;
   const char16_t *find(const char16_t *start, const char16_t *end,
@@ -11141,8 +11168,19 @@ patch_tail_result(full_result r, size_t previous_input, size_t previous_output,
 
 // Returns the number of bytes written. The destination buffer must be large
 // enough. It will add padding (=) if needed.
-size_t tail_encode_base64(char *dst, const char *src, size_t srclen,
-                          base64_options options) {
+template <bool use_lines = false>
+size_t tail_encode_base64_impl(
+    char *dst, const char *src, size_t srclen, base64_options options,
+    size_t line_length = simdutf::default_line_length, size_t line_offset = 0) {
+  if (use_lines) {
+    // sanitize line_length and starting_line_offset.
+    // line_length must be greater than 3.
+    if (line_length < 4) {
+      line_length = 4;
+    }
+    simdutf_log_assert(line_offset <= line_length,
+                       "line_offset should be less than line_length");
+  }
   // By default, we use padding if we are not using the URL variant.
   // This is check with ((options & base64_url) == 0) which returns true if we
   // are not using the URL variant. However, we also allow 'inversion' of the
@@ -11169,34 +11207,202 @@ size_t tail_encode_base64(char *dst, const char *src, size_t srclen,
     t1 = uint8_t(src[i]);
     t2 = uint8_t(src[i + 1]);
     t3 = uint8_t(src[i + 2]);
-    *out++ = e0[t1];
-    *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
-    *out++ = e1[((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)];
-    *out++ = e2[t3];
+    if (use_lines) {
+      if (line_offset + 3 >= line_length) {
+        if (line_offset == line_length) {
+          *out++ = '\n';
+          *out++ = e0[t1];
+          *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+          *out++ = e1[((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)];
+          *out++ = e2[t3];
+          line_offset = 4;
+        } else if (line_offset + 1 == line_length) {
+          *out++ = e0[t1];
+          *out++ = '\n';
+          *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+          *out++ = e1[((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)];
+          *out++ = e2[t3];
+          line_offset = 3;
+        } else if (line_offset + 2 == line_length) {
+          *out++ = e0[t1];
+          *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+          *out++ = '\n';
+          *out++ = e1[((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)];
+          *out++ = e2[t3];
+          line_offset = 2;
+        } else if (line_offset + 3 == line_length) {
+          *out++ = e0[t1];
+          *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+          *out++ = e1[((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)];
+          *out++ = '\n';
+          *out++ = e2[t3];
+          line_offset = 1;
+        }
+      } else {
+        *out++ = e0[t1];
+        *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+        *out++ = e1[((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)];
+        *out++ = e2[t3];
+        line_offset += 4;
+      }
+    } else {
+      *out++ = e0[t1];
+      *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+      *out++ = e1[((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)];
+      *out++ = e2[t3];
+    }
   }
   switch (srclen - i) {
   case 0:
     break;
   case 1:
     t1 = uint8_t(src[i]);
-    *out++ = e0[t1];
-    *out++ = e1[(t1 & 0x03) << 4];
-    if (use_padding) {
-      *out++ = '=';
-      *out++ = '=';
+    if (use_lines) {
+      if (use_padding) {
+        if (line_offset + 3 >= line_length) {
+          if (line_offset == line_length) {
+            *out++ = '\n';
+            *out++ = e0[t1];
+            *out++ = e1[(t1 & 0x03) << 4];
+            *out++ = '=';
+            *out++ = '=';
+          } else if (line_offset + 1 == line_length) {
+            *out++ = e0[t1];
+            *out++ = '\n';
+            *out++ = e1[(t1 & 0x03) << 4];
+            *out++ = '=';
+            *out++ = '=';
+          } else if (line_offset + 2 == line_length) {
+            *out++ = e0[t1];
+            *out++ = e1[(t1 & 0x03) << 4];
+            *out++ = '\n';
+            *out++ = '=';
+            *out++ = '=';
+          } else if (line_offset + 3 == line_length) {
+            *out++ = e0[t1];
+            *out++ = e1[(t1 & 0x03) << 4];
+            *out++ = '=';
+            *out++ = '\n';
+            *out++ = '=';
+          }
+        } else {
+          *out++ = e0[t1];
+          *out++ = e1[(t1 & 0x03) << 4];
+          *out++ = '=';
+          *out++ = '=';
+        }
+      } else {
+        if (line_offset + 2 >= line_length) {
+          if (line_offset == line_length) {
+            *out++ = '\n';
+            *out++ = e0[uint8_t(src[i])];
+            *out++ = e1[(uint8_t(src[i]) & 0x03) << 4];
+          } else if (line_offset + 1 == line_length) {
+            *out++ = e0[uint8_t(src[i])];
+            *out++ = '\n';
+            *out++ = e1[(uint8_t(src[i]) & 0x03) << 4];
+          } else {
+            *out++ = e0[uint8_t(src[i])];
+            *out++ = e1[(uint8_t(src[i]) & 0x03) << 4];
+            // *out++ = '\n'; ==> no newline at the end of the output
+          }
+        } else {
+          *out++ = e0[uint8_t(src[i])];
+          *out++ = e1[(uint8_t(src[i]) & 0x03) << 4];
+        }
+      }
+    } else {
+      *out++ = e0[t1];
+      *out++ = e1[(t1 & 0x03) << 4];
+      if (use_padding) {
+        *out++ = '=';
+        *out++ = '=';
+      }
     }
     break;
   default: /* case 2 */
     t1 = uint8_t(src[i]);
     t2 = uint8_t(src[i + 1]);
-    *out++ = e0[t1];
-    *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
-    *out++ = e2[(t2 & 0x0F) << 2];
-    if (use_padding) {
-      *out++ = '=';
+    if (use_lines) {
+      if (use_padding) {
+        if (line_offset + 3 >= line_length) {
+          if (line_offset == line_length) {
+            *out++ = '\n';
+            *out++ = e0[t1];
+            *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+            *out++ = e2[(t2 & 0x0F) << 2];
+            *out++ = '=';
+          } else if (line_offset + 1 == line_length) {
+            *out++ = e0[t1];
+            *out++ = '\n';
+            *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+            *out++ = e2[(t2 & 0x0F) << 2];
+            *out++ = '=';
+          } else if (line_offset + 2 == line_length) {
+            *out++ = e0[t1];
+            *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+            *out++ = '\n';
+            *out++ = e2[(t2 & 0x0F) << 2];
+            *out++ = '=';
+          } else if (line_offset + 3 == line_length) {
+            *out++ = e0[t1];
+            *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+            *out++ = e2[(t2 & 0x0F) << 2];
+            *out++ = '\n';
+            *out++ = '=';
+          }
+        } else {
+          *out++ = e0[t1];
+          *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+          *out++ = e2[(t2 & 0x0F) << 2];
+          *out++ = '=';
+        }
+      } else {
+        if (line_offset + 3 >= line_length) {
+          if (line_offset == line_length) {
+            *out++ = '\n';
+            *out++ = e0[t1];
+            *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+            *out++ = e2[(t2 & 0x0F) << 2];
+          } else if (line_offset + 1 == line_length) {
+            *out++ = e0[t1];
+            *out++ = '\n';
+            *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+            *out++ = e2[(t2 & 0x0F) << 2];
+          } else if (line_offset + 2 == line_length) {
+            *out++ = e0[t1];
+            *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+            *out++ = '\n';
+            *out++ = e2[(t2 & 0x0F) << 2];
+          } else {
+            *out++ = e0[t1];
+            *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+            *out++ = e2[(t2 & 0x0F) << 2];
+            // *out++ = '\n'; ==> no newline at the end of the output
+          }
+        } else {
+          *out++ = e0[t1];
+          *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+          *out++ = e2[(t2 & 0x0F) << 2];
+        }
+      }
+    } else {
+      *out++ = e0[t1];
+      *out++ = e1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+      *out++ = e2[(t2 & 0x0F) << 2];
+      if (use_padding) {
+        *out++ = '=';
+      }
     }
   }
   return (size_t)(out - dst);
+}
+
+// Returns the number of bytes written. The destination buffer must be large
+// enough. It will add padding (=) if needed.
+inline size_t tail_encode_base64(char *dst, const char *src, size_t srclen,
+                                 base64_options options) {
+  return tail_encode_base64_impl(dst, src, srclen, options);
 }
 
 template <class char_type>
@@ -11349,6 +11555,21 @@ base64_length_from_binary(size_t length, base64_options options) noexcept {
   }
   return (length + 2) / 3 *
          4; // We use padding to make the length a multiple of 4.
+}
+
+simdutf_warn_unused size_t base64_length_from_binary_with_lines(
+    size_t length, base64_options options, size_t line_length) noexcept {
+  if (length == 0) {
+    return 0;
+  }
+  size_t base64_length =
+      scalar::base64::base64_length_from_binary(length, options);
+  if (line_length < 4) {
+    line_length = 4;
+  }
+  size_t lines =
+      (base64_length + line_length - 1) / line_length; // number of lines
+  return base64_length + lines - 1;
 }
 
 // Return the length of the prefix that contains count base64 characters.
@@ -11548,7 +11769,6 @@ simdutf_warn_unused size_t implementation::maximal_binary_length_from_base64(
     const char16_t *input, size_t length) const noexcept {
   return scalar::base64::maximal_binary_length_from_base64(input, length);
 }
-
 simdutf_warn_unused size_t implementation::base64_length_from_binary(
     size_t length, base64_options options) const noexcept {
   return scalar::base64::base64_length_from_binary(length, options);
@@ -11706,6 +11926,14 @@ public:
     return set_best()->binary_to_base64(input, length, output, options);
   }
 
+  size_t
+  binary_to_base64_with_lines(const char *input, size_t length, char *output,
+                              size_t line_length,
+                              base64_options options) const noexcept override {
+    return set_best()->binary_to_base64_with_lines(input, length, output,
+                                                   line_length, options);
+  }
+
   const char *find(const char *start, const char *end,
                    char character) const noexcept override {
     return set_best()->find(start, end, character);
@@ -11797,6 +12025,10 @@ public:
 
   size_t binary_to_base64(const char *, size_t, char *,
                           base64_options) const noexcept override {
+    return 0;
+  }
+  size_t binary_to_base64_with_lines(const char *, size_t, char *, size_t,
+                                     base64_options) const noexcept override {
     return 0;
   }
   const char *find(const char *, const char *, char) const noexcept override {
@@ -11909,6 +12141,17 @@ internal::atomic_ptr<const implementation> &get_default_implementation() {
 }
 #endif
 #define SIMDUTF_GET_CURRENT_IMPLEMENTION
+
+simdutf_warn_unused size_t
+base64_length_from_binary(size_t length, base64_options option) noexcept {
+  return scalar::base64::base64_length_from_binary(length, option);
+}
+
+simdutf_warn_unused size_t base64_length_from_binary_with_lines(
+    size_t length, base64_options options, size_t line_length) noexcept {
+  return scalar::base64::base64_length_from_binary_with_lines(length, options,
+                                                              line_length);
+}
 
 simdutf_warn_unused const char *find(const char *start, const char *end,
                                      char character) noexcept {
@@ -12149,16 +12392,17 @@ base64_to_binary_safe(const char16_t *input, size_t length, char *output,
       decode_up_to_bad_char);
 }
 
-simdutf_warn_unused size_t
-base64_length_from_binary(size_t length, base64_options options) noexcept {
-  return get_default_implementation()->base64_length_from_binary(length,
-                                                                 options);
-}
-
 size_t binary_to_base64(const char *input, size_t length, char *output,
                         base64_options options) noexcept {
   return get_default_implementation()->binary_to_base64(input, length, output,
                                                         options);
+}
+
+size_t binary_to_base64_with_lines(const char *input, size_t length,
+                                   char *output, size_t line_length,
+                                   base64_options options) noexcept {
+  return get_default_implementation()->binary_to_base64_with_lines(
+      input, length, output, line_length, options);
 }
 
 const implementation *builtin_implementation() {
@@ -12218,8 +12462,101 @@ using namespace simd;
  * https://www.codeproject.com/Articles/276993/Base-Encoding-on-a-GPU. (2013).
  */
 
-size_t encode_base64(char *dst, const char *src, size_t srclen,
-                     base64_options options) {
+/**
+ * Insert a line feed character in the 16-byte input at index K in [0,16).
+ */
+inline uint8x16_t insert_line_feed16(uint8x16_t input, size_t K) {
+  static const uint8_t shuffle_masks[16][16] = {
+      {0x80, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 0x80, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 0x80, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 0x80, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 0x80, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 0x80, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 0x80, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 0x80, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 0x80, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 0x80, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0x80, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0x80, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0x80, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0x80, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0x80, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0x80}};
+  // Prepare a vector with '\n' (0x0A)
+  uint8x16_t line_feed_vector = vdupq_n_u8('\n');
+
+  // Load the precomputed shuffle mask for K
+  uint8x16_t mask = vld1q_u8(shuffle_masks[K]);
+
+  // Create a mask where 0x80 indicates the line feed position
+  uint8x16_t lf_pos = vceqq_u8(mask, vdupq_n_u8(0x80));
+
+  uint8x16_t result = vqtbl1q_u8(input, mask);
+
+  // Use vbsl to select '\n' where lf_pos is true, else keep input bytes
+  return vbslq_u8(lf_pos, line_feed_vector, result);
+}
+
+// offset is the number of characters in the current line.
+// It can range from 0 to line_length (inclusive).
+// If offset == line_length, we need to insert a line feed before writing
+// anything.
+size_t write_output_with_line_feeds(uint8_t *dst, uint8x16_t src,
+                                    size_t line_length, size_t &offset) {
+  // Fast path: no need to insert line feeds
+  // If we are at offset, we would write from [offset, offset + 16).
+  // We need that line_length >= offset + 16.
+  if (offset + 16 <= line_length) {
+    // No need to insert line feeds
+    vst1q_u8(dst, src);
+    offset += 16; // offset could be line_length here.
+    return 16;
+  }
+
+  // We have that offset + 16 >= line_length
+  // the common case is that line_length is greater than 16
+  if (simdutf_likely(line_length >= 16)) {
+    // offset <= line_length.
+    // offset + 16 > line_length
+    // So line_length - offset < 16
+    // and line_length - offset >= 0
+    uint8x16_t chunk = insert_line_feed16(src, line_length - offset);
+    vst1q_u8(dst, chunk);
+    // Not ideal to pull the last element and write it separately but
+    // it simplifies the code.
+    *(dst + 16) = vgetq_lane_u8(src, 15);
+    offset += 16 - line_length;
+    return 16 + 1; // we wrote 16 bytes plus one line feed
+  }
+  // Uncommon case where line_length < 16
+  // This is going to be SLOW.
+  else {
+    uint8_t buffer[16];
+    vst1q_u8(buffer, src);
+    size_t out_pos = 0;
+    size_t local_offset = offset;
+    for (size_t i = 0; i < 16;) {
+      if (local_offset == line_length) {
+        dst[out_pos++] = '\n';
+        local_offset = 0;
+      }
+      dst[out_pos++] = buffer[i++];
+      local_offset++;
+    }
+    offset = local_offset;
+    return out_pos;
+  }
+}
+
+template <bool insert_line_feeds>
+size_t encode_base64_impl(char *dst, const char *src, size_t srclen,
+                          base64_options options,
+                          size_t line_length = simdutf::default_line_length) {
+  size_t offset = 0;
+  if (line_length < 4) {
+    line_length = 4; // We do not support line_length less than 4
+  }
   // credit: Wojciech Muła
   uint8_t *out = (uint8_t *)dst;
   constexpr static uint8_t source_table[64] = {
@@ -12262,8 +12599,40 @@ size_t encode_base64(char *dst, const char *src, size_t srclen,
     result.val[1] = vqtbl4q_u8(table, result.val[1]);
     result.val[2] = vqtbl4q_u8(table, result.val[2]);
     result.val[3] = vqtbl4q_u8(table, result.val[3]);
-    vst4q_u8(out, result);
-    out += 64;
+    if (insert_line_feeds) {
+      if (line_length >= 64) { // fast path
+        vst4q_u8(out, result);
+        if (offset + 64 > line_length) {
+          size_t location_end = line_length - offset;
+          size_t to_move = 64 - location_end;
+          std::memmove(out + location_end + 1, out + location_end, to_move);
+          out[location_end] = '\n';
+          offset = to_move;
+          out += 64 + 1;
+        } else {
+          offset += 64;
+          out += 64;
+        }
+      } else { // slow path
+        uint8x16x2_t Z0 = vzipq_u8(result.val[0], result.val[1]);
+        uint8x16x2_t Z1 = vzipq_u8(result.val[2], result.val[3]);
+        uint16x8x2_t Z2 = vzipq_u16(vreinterpretq_u16_u8(Z0.val[0]),
+                                    vreinterpretq_u16_u8(Z1.val[0]));
+        uint16x8x2_t Z3 = vzipq_u16(vreinterpretq_u16_u8(Z0.val[1]),
+                                    vreinterpretq_u16_u8(Z1.val[1]));
+        uint8x16_t T0 = vreinterpretq_u8_u16(Z2.val[0]);
+        uint8x16_t T1 = vreinterpretq_u8_u16(Z2.val[1]);
+        uint8x16_t T2 = vreinterpretq_u8_u16(Z3.val[0]);
+        uint8x16_t T3 = vreinterpretq_u8_u16(Z3.val[1]);
+        out += write_output_with_line_feeds(out, T0, line_length, offset);
+        out += write_output_with_line_feeds(out, T1, line_length, offset);
+        out += write_output_with_line_feeds(out, T2, line_length, offset);
+        out += write_output_with_line_feeds(out, T3, line_length, offset);
+      }
+    } else {
+      vst4q_u8(out, result);
+      out += 64;
+    }
   }
 
   if (i + 24 <= srclen) {
@@ -12280,15 +12649,50 @@ size_t encode_base64(char *dst, const char *src, size_t srclen,
     result.val[1] = vqtbl4_u8(table, result.val[1]);
     result.val[2] = vqtbl4_u8(table, result.val[2]);
     result.val[3] = vqtbl4_u8(table, result.val[3]);
-    vst4_u8(out, result);
-    out += 32;
+    if (insert_line_feeds) {
+      if (line_length >= 32) { // fast path
+        vst4_u8(out, result);
+        if (offset + 32 > line_length) {
+          size_t location_end = line_length - offset;
+          size_t to_move = 32 - location_end;
+          std::memmove(out + location_end + 1, out + location_end, to_move);
+          out[location_end] = '\n';
+          offset = to_move;
+          out += 32 + 1;
+        } else {
+          offset += 32;
+          out += 32;
+        }
+      } else { // slow path
+        uint8x8x2_t Z0 = vzip_u8(result.val[0], result.val[1]);
+        uint8x8x2_t Z1 = vzip_u8(result.val[2], result.val[3]);
+        uint16x4x2_t Z2 = vzip_u16(vreinterpret_u16_u8(Z0.val[0]),
+                                   vreinterpret_u16_u8(Z1.val[0]));
+        uint16x4x2_t Z3 = vzip_u16(vreinterpret_u16_u8(Z0.val[1]),
+                                   vreinterpret_u16_u8(Z1.val[1]));
+        uint8x8_t T0 = vreinterpret_u8_u16(Z2.val[0]);
+        uint8x8_t T1 = vreinterpret_u8_u16(Z2.val[1]);
+        uint8x8_t T2 = vreinterpret_u8_u16(Z3.val[0]);
+        uint8x8_t T3 = vreinterpret_u8_u16(Z3.val[1]);
+        uint8x16_t TT0 = vcombine_u8(T0, T1);
+        uint8x16_t TT1 = vcombine_u8(T2, T3);
+        out += write_output_with_line_feeds(out, TT0, line_length, offset);
+        out += write_output_with_line_feeds(out, TT1, line_length, offset);
+      }
+    } else {
+      vst4_u8(out, result);
+      out += 32;
+    }
     i += 24;
   }
-
-  out += scalar::base64::tail_encode_base64((char *)out, src + i, srclen - i,
-                                            options);
-
+  out += scalar::base64::tail_encode_base64_impl<insert_line_feeds>(
+      (char *)out, src + i, srclen - i, options, line_length, offset);
   return size_t((char *)out - dst);
+}
+
+size_t encode_base64(char *dst, const char *src, size_t srclen,
+                     base64_options options) {
+  return encode_base64_impl<false>(dst, src, srclen, options);
 }
 
 static inline void compress(uint8x16_t data, uint16_t mask, char *output) {
@@ -13270,6 +13674,12 @@ size_t implementation::binary_to_base64(const char *input, size_t length,
   return encode_base64(output, input, length, options);
 }
 
+size_t implementation::binary_to_base64_with_lines(
+    const char *input, size_t length, char *output, size_t line_length,
+    base64_options options) const noexcept {
+  return encode_base64_impl<true>(output, input, length, options, line_length);
+}
+
 const char *implementation::find(const char *start, const char *end,
                                  char character) const noexcept {
   return util_find(start, end, character);
@@ -13330,6 +13740,13 @@ size_t implementation::binary_to_base64(const char *input, size_t length,
                                         char *output,
                                         base64_options options) const noexcept {
   return scalar::base64::tail_encode_base64(output, input, length, options);
+}
+
+size_t implementation::binary_to_base64_with_lines(
+    const char *input, size_t length, char *output, size_t line_length,
+    base64_options options) const noexcept {
+  return scalar::base64::tail_encode_base64_impl<true>(output, input, length,
+                                                       options, line_length);
 }
 
 const char *implementation::find(const char *start, const char *end,
@@ -13597,9 +14014,14 @@ struct block64 {
   __m512i chunks[1];
 };
 
-template <bool base64_url>
-size_t encode_base64(char *dst, const char *src, size_t srclen,
-                     base64_options options) {
+template <bool base64_url, bool use_lines>
+size_t encode_base64_impl(char *dst, const char *src, size_t srclen,
+                          base64_options options,
+                          size_t line_length = simdutf::default_line_length) {
+  size_t offset = 0;
+  if (line_length < 4) {
+    line_length = 4; // We do not support line_length less than 4
+  }
   // credit: Wojciech Muła
   const uint8_t *input = (const uint8_t *)src;
 
@@ -13608,7 +14030,7 @@ size_t encode_base64(char *dst, const char *src, size_t srclen,
       base64_url
           ? "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
           : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
+  uint8_t buffer[64]; // buffer for slow paths
   const __m512i shuffle_input = _mm512_setr_epi32(
       0x01020001, 0x04050304, 0x07080607, 0x0a0b090a, 0x0d0e0c0d, 0x10110f10,
       0x13141213, 0x16171516, 0x191a1819, 0x1c1d1b1c, 0x1f201e1f, 0x22232122,
@@ -13618,17 +14040,56 @@ size_t encode_base64(char *dst, const char *src, size_t srclen,
   const __m512i multi_shifts = _mm512_set1_epi64(UINT64_C(0x3036242a1016040a));
   size_t size = srclen;
   __mmask64 input_mask = 0xffffffffffff; // (1 << 48) - 1
-  while (size >= 48) {
+  // We want that input == end_input means that we must stop.
+  const uint8_t *end_input = input + (size - (size % 48));
+  while (input != end_input) {
     const __m512i v = _mm512_maskz_loadu_epi8(
         input_mask, reinterpret_cast<const __m512i *>(input));
     const __m512i in = _mm512_permutexvar_epi8(shuffle_input, v);
     const __m512i indices = _mm512_multishift_epi64_epi8(multi_shifts, in);
     const __m512i result = _mm512_permutexvar_epi8(indices, lookup);
-    _mm512_storeu_si512(reinterpret_cast<__m512i *>(out), result);
-    out += 64;
+    if (use_lines) {
+      if (offset + 64 > line_length) {
+        if (line_length >= 64) {
+          __m512i expanded = _mm512_mask_expand_epi8(
+              _mm512_set1_epi8('\n'), ~(1ULL << ((line_length - offset))),
+              result);
+          _mm512_storeu_si512(reinterpret_cast<__m512i *>(out), expanded);
+          __m128i last_lane =
+              _mm512_extracti32x4_epi32(result, 3); // Lane 3 (bytes 48-63)
+          uint8_t last_byte =
+              static_cast<uint8_t>(_mm_extract_epi8(last_lane, 15));
+          out[64] = last_byte;
+          out += 65;
+          offset = 64 - (line_length - offset);
+        } else { // slow path
+          _mm512_storeu_epi8(buffer, result);
+          size_t out_pos = 0;
+          size_t local_offset = offset;
+          for (size_t j = 0; j < 64;) {
+            if (local_offset == line_length) {
+              out[out_pos++] = '\n';
+              local_offset = 0;
+            }
+            out[out_pos++] = buffer[j++];
+            local_offset++;
+          }
+          offset = local_offset;
+          out += out_pos;
+        }
+      } else {
+        _mm512_storeu_si512(reinterpret_cast<__m512i *>(out), result);
+        offset += 64;
+        out += 64;
+      }
+    } else {
+      _mm512_storeu_si512(reinterpret_cast<__m512i *>(out), result);
+      out += 64;
+    }
     input += 48;
-    size -= 48;
   }
+  size = size % 48;
+
   input_mask = ((__mmask64)1 << size) - 1;
   const __m512i v = _mm512_maskz_loadu_epi8(
       input_mask, reinterpret_cast<const __m512i *>(input));
@@ -13643,14 +14104,64 @@ size_t encode_base64(char *dst, const char *src, size_t srclen,
   if (!padding_needed) {
     output_len = non_padded_output_len;
   }
-  __mmask64 output_mask = output_len == 64 ? (__mmask64)UINT64_MAX
-                                           : ((__mmask64)1 << output_len) - 1;
+  // If no output, we are done.
+  if (output_len == 0) {
+    return (size_t)(out - (uint8_t *)dst);
+  }
+  __mmask64 output_mask = 0xFFFFFFFFFFFFFFFF >> (64 - output_len);
   __m512i result = _mm512_mask_permutexvar_epi8(
       _mm512_set1_epi8('='), ((__mmask64)1 << non_padded_output_len) - 1,
       indices, lookup);
-  _mm512_mask_storeu_epi8(reinterpret_cast<__m512i *>(out), output_mask,
-                          result);
-  return (size_t)(out - (uint8_t *)dst) + output_len;
+  if (use_lines) {
+    if (offset + output_len > line_length) {
+      if (line_length >= 64) {
+        __m512i expanded = _mm512_mask_expand_epi8(
+            _mm512_set1_epi8('\n'), ~(1ULL << ((line_length - offset))),
+            result);
+        if (output_len == 64) {
+          _mm512_storeu_si512(reinterpret_cast<__m512i *>(out), expanded);
+          out += 64;
+          _mm512_mask_storeu_epi8(reinterpret_cast<__m512i *>(out - 63),
+                                  1ULL << 63, result);
+          out++;
+        } else {
+          output_mask = 0xFFFFFFFFFFFFFFFF >> (64 - output_len - 1);
+          _mm512_mask_storeu_epi8(reinterpret_cast<__m512i *>(out), output_mask,
+                                  expanded);
+          out += output_len + 1;
+        }
+      } else {
+        _mm512_storeu_si512(reinterpret_cast<__m512i *>(buffer), result);
+        size_t out_pos = 0;
+        size_t local_offset = offset;
+        for (size_t j = 0; j < output_len;) {
+          if (local_offset == line_length) {
+            out[out_pos++] = '\n';
+            local_offset = 0;
+          }
+          out[out_pos++] = buffer[j++];
+          local_offset++;
+        }
+        offset = local_offset;
+        out += out_pos;
+      }
+    } else {
+      _mm512_mask_storeu_epi8(reinterpret_cast<__m512i *>(out), output_mask,
+                              result);
+      out += output_len;
+    }
+  } else {
+    _mm512_mask_storeu_epi8(reinterpret_cast<__m512i *>(out), output_mask,
+                            result);
+    out += output_len;
+  }
+  return (size_t)(out - (uint8_t *)dst);
+}
+
+template <bool base64_url>
+size_t encode_base64(char *dst, const char *src, size_t srclen,
+                     base64_options options) {
+  return encode_base64_impl<base64_url, false>(dst, src, srclen, options);
 }
 
 template <bool base64_url, bool ignore_garbage, bool default_or_url>
@@ -14323,6 +14834,18 @@ size_t implementation::binary_to_base64(const char *input, size_t length,
   }
 }
 
+size_t implementation::binary_to_base64_with_lines(
+    const char *input, size_t length, char *output, size_t line_length,
+    base64_options options) const noexcept {
+  if (options & base64_url) {
+    return encode_base64_impl<true, true>(output, input, length, options,
+                                          line_length);
+  } else {
+    return encode_base64_impl<false, true>(output, input, length, options,
+                                           line_length);
+  }
+}
+
 const char *implementation::find(const char *start, const char *end,
                                  char character) const noexcept {
   return util_find(start, end, character);
@@ -14410,6 +14933,7 @@ using namespace simd;
 
 template <bool base64_url>
 simdutf_really_inline __m256i lookup_pshufb_improved(const __m256i input) {
+  // Precomputed shuffle masks for K = 1 to 16
   // credit: Wojciech Muła
   __m256i result = _mm256_subs_epu8(input, _mm256_set1_epi8(51));
   const __m256i less = _mm256_cmpgt_epi8(_mm256_set1_epi8(26), input);
@@ -14436,9 +14960,110 @@ simdutf_really_inline __m256i lookup_pshufb_improved(const __m256i input) {
   return _mm256_add_epi8(result, input);
 }
 
-template <bool isbase64url>
-size_t encode_base64(char *dst, const char *src, size_t srclen,
-                     base64_options options) {
+simdutf_really_inline __m256i insert_line_feed32(__m256i input, int K) {
+
+  static const uint8_t low_table[16][32] = {
+      {0x80, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14,
+       0,    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+      {0, 0x80, 1, 2, 3, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14,
+       0, 1,    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+      {0, 1, 0x80, 2, 3, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14,
+       0, 1, 2,    3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+      {0, 1, 2, 0x80, 3, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14,
+       0, 1, 2, 3,    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+      {0, 1, 2, 3, 0x80, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14,
+       0, 1, 2, 3, 4,    5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+      {0, 1, 2, 3, 4, 0x80, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14,
+       0, 1, 2, 3, 4, 5,    6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+      {0, 1, 2, 3, 4, 5, 0x80, 6, 7, 8, 9,  10, 11, 12, 13, 14,
+       0, 1, 2, 3, 4, 5, 6,    7, 8, 9, 10, 11, 12, 13, 14, 15},
+      {0, 1, 2, 3, 4, 5, 6, 0x80, 7, 8, 9,  10, 11, 12, 13, 14,
+       0, 1, 2, 3, 4, 5, 6, 7,    8, 9, 10, 11, 12, 13, 14, 15},
+      {0, 1, 2, 3, 4, 5, 6, 7, 0x80, 8, 9,  10, 11, 12, 13, 14,
+       0, 1, 2, 3, 4, 5, 6, 7, 8,    9, 10, 11, 12, 13, 14, 15},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 0x80, 9,  10, 11, 12, 13, 14,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9,    10, 11, 12, 13, 14, 15},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0x80, 10, 11, 12, 13, 14,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,   11, 12, 13, 14, 15},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0x80, 11, 12, 13, 14,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,   12, 13, 14, 15},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0x80, 12, 13, 14,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,   13, 14, 15},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0x80, 13, 14,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,   14, 15},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0x80, 14,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,   15},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0x80,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
+  static const uint8_t high_table[16][32] = {
+      {0,    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+       0x80, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14},
+      {0, 1,    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+       0, 0x80, 1, 2, 3, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14},
+      {0, 1, 2,    3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+       0, 1, 0x80, 2, 3, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14},
+      {0, 1, 2, 3,    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+       0, 1, 2, 0x80, 3, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4,    5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+       0, 1, 2, 3, 0x80, 4, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5,    6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+       0, 1, 2, 3, 4, 0x80, 5, 6, 7, 8, 9,  10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6,    7, 8, 9, 10, 11, 12, 13, 14, 15,
+       0, 1, 2, 3, 4, 5, 0x80, 6, 7, 8, 9,  10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7,    8, 9, 10, 11, 12, 13, 14, 15,
+       0, 1, 2, 3, 4, 5, 6, 0x80, 7, 8, 9,  10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8,    9, 10, 11, 12, 13, 14, 15,
+       0, 1, 2, 3, 4, 5, 6, 7, 0x80, 8, 9,  10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,    10, 11, 12, 13, 14, 15,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 0x80, 9,  10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,   11, 12, 13, 14, 15,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0x80, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,   12, 13, 14, 15,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0x80, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,   13, 14, 15,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0x80, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,   14, 15,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0x80, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,   15,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0x80, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0x80}};
+
+  __m256i line_feed_vector = _mm256_set1_epi8('\n');
+  if (K >= 16) {
+    __m256i mask = _mm256_loadu_si256((const __m256i *)high_table[K - 16]);
+    __m256i lf_pos =
+        _mm256_cmpeq_epi8(mask, _mm256_set1_epi8(static_cast<char>(0x80)));
+    __m256i shuffled = _mm256_shuffle_epi8(input, mask);
+    __m256i result = _mm256_blendv_epi8(shuffled, line_feed_vector, lf_pos);
+    return result;
+  }
+  // Shift input right by 1 byte
+  __m256i shift = _mm256_alignr_epi8(
+      input, _mm256_permute2x128_si256(input, input, 0x21), 15);
+
+  input = _mm256_blend_epi32(input, shift, 0xF0);
+
+  __m256i mask = _mm256_loadu_si256((const __m256i *)low_table[K]);
+
+  __m256i lf_pos =
+      _mm256_cmpeq_epi8(mask, _mm256_set1_epi8(static_cast<char>(0x80)));
+  __m256i shuffled = _mm256_shuffle_epi8(input, mask);
+
+  __m256i result = _mm256_blendv_epi8(shuffled, line_feed_vector, lf_pos);
+  return result;
+}
+
+template <bool isbase64url, bool use_lines>
+size_t
+avx2_encode_base64_impl(char *dst, const char *src, size_t srclen,
+                        base64_options options,
+                        size_t line_length = simdutf::default_line_length) {
+  size_t offset = 0;
+
+  if (line_length < 4) {
+    line_length = 4; // We do not support line_length less than 4
+  }
   // credit: Wojciech Muła
   const uint8_t *input = (const uint8_t *)src;
 
@@ -14504,20 +15129,123 @@ size_t encode_base64(char *dst, const char *src, size_t srclen,
     const __m256i input2 = _mm256_or_si256(t1_2, t3_2);
     const __m256i input3 = _mm256_or_si256(t1_3, t3_3);
 
-    _mm256_storeu_si256(reinterpret_cast<__m256i *>(out),
-                        lookup_pshufb_improved<isbase64url>(input0));
-    out += 32;
+    if (use_lines) {
+      if (line_length >= 32) { // fast path
+        __m256i result;
+        result = lookup_pshufb_improved<isbase64url>(input0);
+        if (offset + 32 > line_length) {
+          size_t location_end = line_length - offset;
+          size_t to_move = 32 - location_end;
+          // We could do this, or extract instead.
+          _mm256_storeu_si256(reinterpret_cast<__m256i *>(out + 1), result);
+          _mm256_storeu_si256(
+              reinterpret_cast<__m256i *>(out),
+              insert_line_feed32(result, static_cast<int>(location_end)));
+          offset = to_move;
+          out += 32 + 1;
+        } else {
+          _mm256_storeu_si256(reinterpret_cast<__m256i *>(out), result);
+          offset += 32;
+          out += 32;
+        }
+        result = lookup_pshufb_improved<isbase64url>(input1);
 
-    _mm256_storeu_si256(reinterpret_cast<__m256i *>(out),
-                        lookup_pshufb_improved<isbase64url>(input1));
-    out += 32;
+        if (offset + 32 > line_length) {
+          size_t location_end = line_length - offset;
+          size_t to_move = 32 - location_end;
 
-    _mm256_storeu_si256(reinterpret_cast<__m256i *>(out),
-                        lookup_pshufb_improved<isbase64url>(input2));
-    out += 32;
-    _mm256_storeu_si256(reinterpret_cast<__m256i *>(out),
-                        lookup_pshufb_improved<isbase64url>(input3));
-    out += 32;
+          // We could do this, or extract instead.
+          _mm256_storeu_si256(reinterpret_cast<__m256i *>(out + 1), result);
+          _mm256_storeu_si256(
+              reinterpret_cast<__m256i *>(out),
+              insert_line_feed32(result, static_cast<int>(location_end)));
+          // see above.
+          // out[32] = static_cast<uint8_t>(_mm256_extract_epi8(result, 31));
+          offset = to_move;
+          out += 32 + 1;
+        } else {
+
+          _mm256_storeu_si256(reinterpret_cast<__m256i *>(out), result);
+
+          offset += 32;
+          out += 32;
+        }
+        result = lookup_pshufb_improved<isbase64url>(input2);
+
+        if (offset + 32 > line_length) {
+          size_t location_end = line_length - offset;
+          size_t to_move = 32 - location_end;
+
+          // We could do this, or extract instead.
+          _mm256_storeu_si256(reinterpret_cast<__m256i *>(out + 1), result);
+          _mm256_storeu_si256(
+              reinterpret_cast<__m256i *>(out),
+              insert_line_feed32(result, static_cast<int>(location_end)));
+          // see above.
+          // out[32] = static_cast<uint8_t>(_mm256_extract_epi8(result, 31));
+          offset = to_move;
+          out += 32 + 1;
+        } else {
+          _mm256_storeu_si256(reinterpret_cast<__m256i *>(out), result);
+          offset += 32;
+          out += 32;
+        }
+        result = lookup_pshufb_improved<isbase64url>(input3);
+
+        if (offset + 32 > line_length) {
+          size_t location_end = line_length - offset;
+          size_t to_move = 32 - location_end;
+
+          // We could do this, or extract instead.
+          _mm256_storeu_si256(reinterpret_cast<__m256i *>(out + 1), result);
+          _mm256_storeu_si256(
+              reinterpret_cast<__m256i *>(out),
+              insert_line_feed32(result, static_cast<int>(location_end)));
+          // see above.
+          // out[32] = static_cast<uint8_t>(_mm256_extract_epi8(result, 31));
+          offset = to_move;
+          out += 32 + 1;
+        } else {
+          _mm256_storeu_si256(reinterpret_cast<__m256i *>(out), result);
+          offset += 32;
+          out += 32;
+        }
+      } else { // slow path
+        // could be optimized
+        uint8_t buffer[128];
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(buffer),
+                            lookup_pshufb_improved<isbase64url>(input0));
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(buffer + 32),
+                            lookup_pshufb_improved<isbase64url>(input1));
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(buffer + 64),
+                            lookup_pshufb_improved<isbase64url>(input2));
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(buffer + 96),
+                            lookup_pshufb_improved<isbase64url>(input3));
+        size_t out_pos = 0;
+        size_t local_offset = offset;
+        for (size_t j = 0; j < 128;) {
+          if (local_offset == line_length) {
+            out[out_pos++] = '\n';
+            local_offset = 0;
+          }
+          out[out_pos++] = buffer[j++];
+          local_offset++;
+        }
+        offset = local_offset;
+        out += out_pos;
+      }
+    } else {
+      _mm256_storeu_si256(reinterpret_cast<__m256i *>(out),
+                          lookup_pshufb_improved<isbase64url>(input0));
+      _mm256_storeu_si256(reinterpret_cast<__m256i *>(out + 32),
+                          lookup_pshufb_improved<isbase64url>(input1));
+      _mm256_storeu_si256(reinterpret_cast<__m256i *>(out + 64),
+                          lookup_pshufb_improved<isbase64url>(input2));
+      _mm256_storeu_si256(reinterpret_cast<__m256i *>(out + 96),
+                          lookup_pshufb_improved<isbase64url>(input3));
+
+      out += 128;
+    }
   }
   for (; i + 28 <= srclen; i += 24) {
     // lo = [xxxx|DDDC|CCBB|BAAA]
@@ -14539,12 +15267,57 @@ size_t encode_base64(char *dst, const char *src, size_t srclen,
     const __m256i t3 = _mm256_mullo_epi16(t2, _mm256_set1_epi32(0x01000010));
     const __m256i indices = _mm256_or_si256(t1, t3);
 
-    _mm256_storeu_si256(reinterpret_cast<__m256i *>(out),
-                        lookup_pshufb_improved<isbase64url>(indices));
-    out += 32;
+    if (use_lines) {
+      if (line_length >= 32) { // fast path
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(out),
+                            lookup_pshufb_improved<isbase64url>(indices));
+
+        if (offset + 32 > line_length) {
+          size_t location_end = line_length - offset;
+          size_t to_move = 32 - location_end;
+          std::memmove(out + location_end + 1, out + location_end, to_move);
+          out[location_end] = '\n';
+          offset = to_move;
+          out += 32 + 1;
+        } else {
+          offset += 32;
+          out += 32;
+        }
+      } else { // slow path
+        // could be optimized
+        uint8_t buffer[32];
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(buffer),
+                            lookup_pshufb_improved<isbase64url>(indices));
+        std::memcpy(out, buffer, 32);
+        size_t out_pos = 0;
+        size_t local_offset = offset;
+        for (size_t j = 0; j < 32;) {
+          if (local_offset == line_length) {
+            out[out_pos++] = '\n';
+            local_offset = 0;
+          }
+          out[out_pos++] = buffer[j++];
+          local_offset++;
+        }
+        offset = local_offset;
+        out += out_pos;
+      }
+    } else {
+      _mm256_storeu_si256(reinterpret_cast<__m256i *>(out),
+                          lookup_pshufb_improved<isbase64url>(indices));
+
+      out += 32;
+    }
   }
-  return i / 3 * 4 + scalar::base64::tail_encode_base64((char *)out, src + i,
-                                                        srclen - i, options);
+  return ((char *)out - (char *)dst) +
+         scalar::base64::tail_encode_base64_impl<use_lines>(
+             (char *)out, src + i, srclen - i, options, line_length, offset);
+}
+
+template <bool isbase64url>
+size_t encode_base64(char *dst, const char *src, size_t srclen,
+                     base64_options options) {
+  return avx2_encode_base64_impl<isbase64url, false>(dst, src, srclen, options);
 }
 
 static inline void compress(__m128i data, uint16_t mask, char *output) {
@@ -15463,6 +16236,18 @@ size_t implementation::binary_to_base64(const char *input, size_t length,
     return encode_base64<true>(output, input, length, options);
   } else {
     return encode_base64<false>(output, input, length, options);
+  }
+}
+
+size_t implementation::binary_to_base64_with_lines(
+    const char *input, size_t length, char *output, size_t line_length,
+    base64_options options) const noexcept {
+  if (options & base64_url) {
+    return avx2_encode_base64_impl<true, true>(output, input, length, options,
+                                               line_length);
+  } else {
+    return avx2_encode_base64_impl<false, true>(output, input, length, options,
+                                                line_length);
   }
 }
 
@@ -17590,6 +18375,14 @@ size_t implementation::binary_to_base64(const char *input, size_t length,
     return encode_base64<false>(output, input, length, options);
   }
 }
+
+size_t implementation::binary_to_base64_with_lines(
+    const char *input, size_t length, char *output, size_t line_length,
+    base64_options options) const noexcept {
+  return scalar::base64::tail_encode_base64_impl<true>(output, input, length,
+                                                       options, line_length);
+}
+
 const char *implementation::find(const char *start, const char *end,
                                  char character) const noexcept {
   return util::find(start, end, character);
@@ -17695,8 +18488,8 @@ rvv_utf32_store_utf16_m4(uint16_t *dst, vuint32m4_t utf32, size_t vl,
 /* end file src/rvv/rvv_utf8_to.inl.cpp */
 
 /* begin file src/rvv/rvv_find.cpp */
-simdutf_really_inline const char *util_find(const char *start, const char *end,
-                                            char character) noexcept {
+const char *implementation::find(const char *start, const char *end,
+                                 char character) const noexcept {
   const char *src = start;
   for (size_t len = end - start, vl; len > 0; len -= vl, src += vl) {
     vl = __riscv_vsetvl_e8m8(len);
@@ -17709,9 +18502,8 @@ simdutf_really_inline const char *util_find(const char *start, const char *end,
   return end;
 }
 
-simdutf_really_inline const char16_t *util_find(const char16_t *start,
-                                                const char16_t *end,
-                                                char16_t character) noexcept {
+const char16_t *implementation::find(const char16_t *start, const char16_t *end,
+                                     char16_t character) const noexcept {
   const char16_t *src = start;
   for (size_t len = end - start, vl; len > 0; len -= vl, src += vl) {
     vl = __riscv_vsetvl_e16m8(len);
@@ -17759,14 +18551,11 @@ size_t implementation::binary_to_base64(const char *input, size_t length,
   return scalar::base64::tail_encode_base64(output, input, length, options);
 }
 
-const char *implementation::find(const char *start, const char *end,
-                                 char character) const noexcept {
-  return util_find(start, end, character);
-}
-
-const char16_t *implementation::find(const char16_t *start, const char16_t *end,
-                                     char16_t character) const noexcept {
-  return util_find(start, end, character);
+size_t implementation::binary_to_base64_with_lines(
+    const char *input, size_t length, char *output, size_t line_length,
+    base64_options options) const noexcept {
+  return scalar::base64::tail_encode_base64_impl<true>(output, input, length,
+                                                       options, line_length);
 }
 
 } // namespace rvv
@@ -17834,7 +18623,6 @@ using namespace simd;
  */
 
 // --- encoding ----------------------------------------------------
-
 template <bool base64_url> __m128i lookup_pshufb_improved(const __m128i input) {
   // credit: Wojciech Muła
   // reduce  0..51 -> 0
@@ -17866,9 +18654,47 @@ template <bool base64_url> __m128i lookup_pshufb_improved(const __m128i input) {
   return _mm_add_epi8(result, input);
 }
 
-template <bool isbase64url>
-size_t encode_base64(char *dst, const char *src, size_t srclen,
-                     base64_options options) {
+inline __m128i insert_line_feed16(__m128i input, size_t K) {
+  static const uint8_t shuffle_masks[16][16] = {
+      {0x80, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 0x80, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 0x80, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 0x80, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 0x80, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 0x80, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 0x80, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 0x80, 7, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 0x80, 8, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 0x80, 9, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0x80, 10, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0x80, 11, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0x80, 12, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0x80, 13, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0x80, 14},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0x80}};
+  // Prepare a vector with '\n' (0x0A)
+  __m128i line_feed_vector = _mm_set1_epi8('\n');
+
+  // Load the precomputed shuffle mask for K (index K-1)
+  __m128i mask = _mm_loadu_si128((__m128i *)shuffle_masks[K]);
+  __m128i lf_pos = _mm_cmpeq_epi8(mask, _mm_set1_epi8(static_cast<char>(0x80)));
+
+  // Perform the shuffle to reposition the K bytes
+  __m128i shuffled = _mm_shuffle_epi8(input, mask);
+
+  // Blend with line_feed_vector to insert '\n' at the appropriate positions
+  __m128i result = _mm_blendv_epi8(shuffled, line_feed_vector, lf_pos);
+
+  return result;
+}
+template <bool isbase64url, bool use_lines>
+size_t encode_base64_impl(char *dst, const char *src, size_t srclen,
+                          base64_options options,
+                          size_t line_length = simdutf::default_line_length) {
+  size_t offset = 0;
+  if (line_length < 4) {
+    line_length = 4; // We do not support line_length less than 4
+  }
   // credit: Wojciech Muła
   // SSE (lookup: pshufb improved unrolled)
   const uint8_t *input = (const uint8_t *)src;
@@ -17918,21 +18744,98 @@ size_t encode_base64(char *dst, const char *src, size_t srclen,
     const __m128i input2 = _mm_or_si128(t1_2, t3_2);
     const __m128i input3 = _mm_or_si128(t1_3, t3_3);
 
-    _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
-                     lookup_pshufb_improved<isbase64url>(input0));
-    out += 16;
+    const __m128i t0 = lookup_pshufb_improved<isbase64url>(input0);
+    const __m128i t1 = lookup_pshufb_improved<isbase64url>(input1);
+    const __m128i t2 = lookup_pshufb_improved<isbase64url>(input2);
+    const __m128i t3 = lookup_pshufb_improved<isbase64url>(input3);
 
-    _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
-                     lookup_pshufb_improved<isbase64url>(input1));
-    out += 16;
+    if (use_lines) {
+      if (line_length >= 64) { // fast path
+        if (offset + 64 > line_length) {
+          size_t location_end = line_length - offset;
+          size_t to_move = 64 - location_end;
+          if (location_end < 16) {
+            // We can store or extract store. See below.
+            //_mm_storeu_si128(reinterpret_cast<__m128i *>(out+1), t0);
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
+                             insert_line_feed16(t0, location_end));
+            out[16] = static_cast<uint8_t>(_mm_extract_epi8(t0, 15));
+            out += 17;
+          } else {
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(out), t0);
+            out += 16;
+          }
+          if (location_end >= 16 && location_end < 32) {
+            // We can store or extract store. See below.
+            //_mm_storeu_si128(reinterpret_cast<__m128i *>(out+1), t1);
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
+                             insert_line_feed16(t1, location_end - 16));
+            out[16] = static_cast<uint8_t>(_mm_extract_epi8(t1, 15));
+            out += 17;
+          } else {
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(out), t1);
+            out += 16;
+          }
+          if (location_end >= 32 && location_end < 48) {
+            // We can store or extract store. See below.
+            //_mm_storeu_si128(reinterpret_cast<__m128i *>(out+1), t2);
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
+                             insert_line_feed16(t2, location_end - 32));
+            out[16] = static_cast<uint8_t>(_mm_extract_epi8(t2, 15));
+            out += 17;
+          } else {
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(out), t2);
+            out += 16;
+          }
+          if (location_end >= 48) {
+            // We can store or extract store. See below.
+            //_mm_storeu_si128(reinterpret_cast<__m128i *>(out+1), t3);
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
+                             insert_line_feed16(t3, location_end - 48));
+            out[16] = static_cast<uint8_t>(_mm_extract_epi8(t3, 15));
+            out += 17;
+          } else {
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(out), t3);
+            out += 16;
+          }
+          offset = to_move;
+        } else {
 
-    _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
-                     lookup_pshufb_improved<isbase64url>(input2));
-    out += 16;
-
-    _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
-                     lookup_pshufb_improved<isbase64url>(input3));
-    out += 16;
+          _mm_storeu_si128(reinterpret_cast<__m128i *>(out), t0);
+          _mm_storeu_si128(reinterpret_cast<__m128i *>(out + 16), t1);
+          _mm_storeu_si128(reinterpret_cast<__m128i *>(out + 32), t2);
+          _mm_storeu_si128(reinterpret_cast<__m128i *>(out + 48), t3);
+          offset += 64;
+          out += 64;
+        }
+      } else { // slow path
+        // could be optimized
+        uint8_t buffer[64];
+        _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer), t0);
+        _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + 16), t1);
+        _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + 32), t2);
+        _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + 48), t3);
+        std::memcpy(out, buffer, 64);
+        size_t out_pos = 0;
+        size_t local_offset = offset;
+        for (size_t j = 0; j < 64;) {
+          if (local_offset == line_length) {
+            out[out_pos++] = '\n';
+            local_offset = 0;
+          }
+          out[out_pos++] = buffer[j++];
+          local_offset++;
+        }
+        offset = local_offset;
+        out += out_pos;
+      }
+    } else {
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out), t0);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + 16), t1);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + 32), t2);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + 48), t3);
+      out += 64;
+    }
   }
   for (; i + 16 <= srclen; i += 12) {
 
@@ -17970,13 +18873,55 @@ size_t encode_base64(char *dst, const char *src, size_t srclen,
     // res   = [00dddddd|00cccccc|00bbbbbb|00aaaaaa] = t1 | t3
     const __m128i indices = _mm_or_si128(t1, t3);
 
-    _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
-                     lookup_pshufb_improved<isbase64url>(indices));
-    out += 16;
-  }
+    const __m128i T0 = lookup_pshufb_improved<isbase64url>(indices);
 
-  return i / 3 * 4 + scalar::base64::tail_encode_base64((char *)out, src + i,
-                                                        srclen - i, options);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(out), T0);
+
+    if (use_lines) {
+      if (line_length >= 16) { // fast path
+        _mm_storeu_si128(reinterpret_cast<__m128i *>(out), T0);
+        if (offset + 16 > line_length) {
+          size_t location_end = line_length - offset;
+          size_t to_move = 16 - location_end;
+          std::memmove(out + location_end + 1, out + location_end, to_move);
+          out[location_end] = '\n';
+          offset = to_move;
+          out += 16 + 1;
+        } else {
+          offset += 16;
+          out += 16;
+        }
+      } else { // slow path
+        // could be optimized
+        uint8_t buffer[16];
+        _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer), T0);
+        size_t out_pos = 0;
+        size_t local_offset = offset;
+        for (size_t j = 0; j < 16;) {
+          if (local_offset == line_length) {
+            out[out_pos++] = '\n';
+            local_offset = 0;
+          }
+          out[out_pos++] = buffer[j++];
+          local_offset++;
+        }
+        offset = local_offset;
+        out += out_pos;
+      }
+    } else {
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out), T0);
+      out += 16;
+    }
+  }
+  return ((char *)out - (char *)dst) +
+         scalar::base64::tail_encode_base64_impl<use_lines>(
+             (char *)out, src + i, srclen - i, options, line_length, offset);
+}
+
+template <bool isbase64url>
+size_t encode_base64(char *dst, const char *src, size_t srclen,
+                     base64_options options) {
+  return encode_base64_impl<isbase64url, false>(dst, src, srclen, options);
 }
 
 // --- decoding -----------------------------------------------
@@ -18886,6 +19831,19 @@ size_t implementation::binary_to_base64(const char *input, size_t length,
     return encode_base64<true>(output, input, length, options);
   } else {
     return encode_base64<false>(output, input, length, options);
+  }
+}
+
+size_t implementation::binary_to_base64_with_lines(
+    const char *input, size_t length, char *output, size_t line_length,
+    base64_options options) const noexcept {
+  if (options & base64_url) {
+    return encode_base64_impl<true, true>(output, input, length, options,
+                                          line_length);
+
+  } else {
+    return encode_base64_impl<false, true>(output, input, length, options,
+                                           line_length);
   }
 }
 
@@ -19848,6 +20806,14 @@ size_t implementation::binary_to_base64(const char *input, size_t length,
     return encode_base64<false>(output, input, length, options);
   }
 }
+
+size_t implementation::binary_to_base64_with_lines(
+    const char *input, size_t length, char *output, size_t line_length,
+    base64_options options) const noexcept {
+  return scalar::base64::tail_encode_base64_impl<true>(output, input, length,
+                                                       options, line_length);
+}
+
 const char *implementation::find(const char *start, const char *end,
                                  char character) const noexcept {
   return util_find(start, end, character);
@@ -20822,6 +21788,13 @@ size_t implementation::binary_to_base64(const char *input, size_t length,
   } else {
     return encode_base64<false>(output, input, length, options);
   }
+}
+
+size_t implementation::binary_to_base64_with_lines(
+    const char *input, size_t length, char *output, size_t line_length,
+    base64_options options) const noexcept {
+  return scalar::base64::tail_encode_base64_impl<true>(output, input, length,
+                                                       options, line_length);
 }
 
 const char *implementation::find(const char *start, const char *end,
