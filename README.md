@@ -16,7 +16,7 @@ A high-performance, cross-platform Base64 encoding/decoding module for React Nat
 
 ```sh
 yarn add react-native-nitro-base64
-yarn add react-native-nitro-modules@0.29.8
+yarn add react-native-nitro-modules
 ```
 
 ### Linking
@@ -24,39 +24,72 @@ This module uses [react-native-nitro-modules](https://github.com/mrousavy/nitro)
 
 ## API
 
+| Function | Input | Output | Use case |
+|---|---|---|---|
+| `encode(str, urlSafe?)` | binary string | base64 string | Text/JWT encoding |
+| `decode(base64)` | base64 string | binary string | Text/JWT decoding — accepts standard and URL-safe automatically |
+| `encodeBuffer(ArrayBuffer, urlSafe?)` | ArrayBuffer | base64 string | Image/file → base64 |
+| `decodeBuffer(base64)` | base64 string | ArrayBuffer | base64 → raw binary — accepts standard and URL-safe automatically |
+| `fromByteArray(Uint8Array, urlSafe?)` | Uint8Array | base64 string | Crypto/hashing output → base64 |
+| `toByteArray(base64)` | base64 string | Uint8Array | base64 → typed binary — accepts standard and URL-safe automatically |
+
+### Which one should I use?
+
+**Working with images?** Use `encodeBuffer` / `decodeBuffer`.
+
+Images are binary data. Passing them through a JS string crosses the JSI bridge as UTF-16, doubling memory and adding overhead. `ArrayBuffer` avoids that — raw bytes go directly to C++.
+
 ```typescript
-export interface NitroBase64 extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
-  install(): void;
-  encode(input: string, urlSafe: boolean): string;
-  decode(base64: string, urlSafe: boolean): string;
-}
+import { encodeBuffer, decodeBuffer } from 'react-native-nitro-base64';
+import { readFile } from 'react-native-fs';
+
+// Image file → base64 (for API upload)
+const bytes = await readFile(imagePath, 'ascii'); // or use arrayBuffer APIs
+const base64 = encodeBuffer(buffer); // ArrayBuffer → base64
+
+// base64 from API → display in <Image>
+const buffer = decodeBuffer(base64String); // base64 → ArrayBuffer
 ```
 
-- `install(): void` — Initializes the native module for faster first-time encoding/decoding. Call this early in your app lifecycle via index.js or root
-- `encode(input: string, urlSafe: boolean): string` — Encodes binary data to base64. Set `urlSafe` to `true` for base64url encoding.
-- `decode(base64: string, urlSafe: boolean): string` — Decodes base64 (WHATWG forgiving) to binary. Set `urlSafe` to `true` for base64url decoding.
-
-## Usage
-```javascript
-index.js
-import { install } from 'react-native-nitro-base64';
-import { AppRegistry } from 'react-native';
-import { install } from 'react-native-nitro-base64';
-import { name as appName } from './app.json';
-import App from './src/App';
-install(); // <=== Call
-AppRegistry.registerComponent(appName, () => App);
-
-
+**Working with text / JWT?** Use `encode` / `decode`.
 
 ```typescript
-import { encode,decode } from 'react-native-nitro-base64';
+import { encode, decode } from 'react-native-nitro-base64';
 
-const encoded = encode('Hello World!', false); // "SGVsbG8gV29ybGQh"
-const urlEncoded = encode('Hello World!', true); // "SGVsbG8gV29ybGQh"
+const encoded = encode('Hello World!'); // "SGVsbG8gV29ybGQh"
+const decoded = decode(encoded);       // "Hello World!"
 
-const decoded = decode(encoded, false); // "Hello World!"
-const urlDecoded = decode(urlEncoded, true); // "Hello World!"
+// URL-safe (JWT, URL params)
+const token = encode(payload, true);
+```
+
+**Working with Web Crypto / hashing?** Use `fromByteArray` / `toByteArray`.
+
+Web Crypto APIs (`crypto.subtle`) return `Uint8Array`. These are drop-in compatible with `react-native-quick-base64`.
+
+```typescript
+import { fromByteArray, toByteArray } from 'react-native-nitro-base64';
+
+// Hash → base64
+const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
+const encoded = fromByteArray(hash);
+
+// base64 → bytes for TextDecoder
+const bytes = toByteArray(base64String);
+const text = new TextDecoder().decode(bytes);
+```
+
+## Setup
+
+```javascript
+// index.js
+import { install } from 'react-native-nitro-base64';
+import { AppRegistry } from 'react-native';
+import { name as appName } from './app.json';
+import App from './src/App';
+
+install(); // call before app mounts
+AppRegistry.registerComponent(appName, () => App);
 ```
 
 ## Platform Support
