@@ -9,7 +9,10 @@
   },
   "autolinking": {
     "NitroBase64": {
-      "cpp": "NitroBase64"
+      "all": {
+        "language": "c++",
+        "implementationClassName": "NitroBase64"
+      }
     }
   },
   "ignorePaths": ["node_modules"]

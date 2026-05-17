@@ -1,7 +1,7 @@
 {
   "name": "react-native-nitro-base64",
-  "version": "0.8.2",
-  "description": "NitroModule Base64",
+  "version": "1.1.2",
+  "description": "The fastest Base64 library for React Native, powered by simdutf SIMD C++ and Nitro Modules",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
@@ -47,7 +47,24 @@
   "keywords": [
     "react-native",
     "ios",
-    "android"
+    "android",
+    "base64",
+    "base64url",
+    "encoding",
+    "decoding",
+    "simdutf",
+    "simd",
+    "performance",
+    "fast",
+    "nitro",
+    "nitro-modules",
+    "jsi",
+    "arraybuffer",
+    "uint8array",
+    "binary",
+    "image",
+    "crypto",
+    "jwt"
   ],
   "repository": {
     "type": "git",
@@ -79,12 +96,12 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "jest": "^29.7.0",
-    "nitrogen": "^0.29.8",
+    "nitrogen": "^0.35.6",
     "prettier": "^3.6.2",
     "react": "19.1.0",
     "react-native": "0.81.1",
     "react-native-builder-bob": "^0.40.13",
-    "react-native-nitro-modules": "^0.29.8",
+    "react-native-nitro-modules": "^0.35.6",
     "release-it": "^19.0.4",
     "turbo": "^2.5.6",
     "typescript": "^5.9.2"

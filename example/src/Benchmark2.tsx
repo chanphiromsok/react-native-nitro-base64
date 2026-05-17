@@ -1,258 +1,292 @@
-/* global performance, atob, btoa */
-import jsBase64 from 'base64-js';
+import {
+  fromByteArray as quickFromByteArray,
+  toByteArray as quickToByteArray,
+} from 'react-native-quick-base64';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { decode, encode } from 'react-native-nitro-base64';
+import {
+  decode,
+  decodeBuffer,
+  encode,
+  encodeBuffer,
+  fromByteArray,
+  toByteArray,
+} from 'react-native-nitro-base64';
 import { data as largeData } from './image-large.json';
 import { data } from './image.json';
-const sleep = (t: number) => new Promise((resolve) => setTimeout(resolve, t));
 
-const round = (num: number, decimalPlaces = 0): string => {
-  return num.toFixed(decimalPlaces);
+declare const performance: { now(): number };
+declare function atob(data: string): string;
+declare function btoa(data: string): string;
+
+const sleep = (t: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, t));
+const round = (num: number, decimalPlaces = 0): string =>
+  num.toFixed(decimalPlaces);
+const speedup = (ms: number, base: number) => {
+  if (!ms || !base || base <= 0) return '';
+  const ratio = base / ms;
+  if (ratio >= 1) return `(${round(ratio, 2)}x faster)`;
+  return `(${round(1 / ratio, 2)}x slower)`;
 };
 
 const Benchmarks2 = () => {
-  const [processingJSBase64, setProcessingJSBase64] = useState<boolean>(false);
-  const [jsBase64Result, setJSBase64Result] = useState<number>(0);
-  const [processingNativeBase64, setProcessingNativeBase64] =
-    useState<boolean>(false);
-  const [nativeBase64Result, setNativeBase64Result] = useState<number>(0);
-  const [processingObjcBase64, setProcessingObjcBase64] =
-    useState<boolean>(false);
-  const [objcBase64Result, setObjcBase64Result] = useState<number>(0);
-  const [processingAtobBtoa, setProcessingAtobBtoa] = useState<boolean>(false);
-  const [atobBtoaResult, setAtobBtoaResult] = useState<number>(0);
-  const [processingAtobBtoaLarge, setProcessingAtobBtoaLarge] =
-    useState<boolean>(false);
-  const [atobBtoaLargeResult, setAtobBtoaLargeResult] = useState<number>(0);
-  const [processingJSBase64Large, setProcessingJSBase64Large] =
-    useState<boolean>(false);
-  const [jsBase64LargeResult, setJSBase64LargeResult] = useState<number>(0);
+  // Nitro string (small / large)
+  const [nitroResult, setNitroResult] = useState(0);
+  const [nitroLargeResult, setNitroLargeResult] = useState(0);
 
-  const handleNativeBase64Press = async () => {
-    setProcessingNativeBase64(true);
-    let dataToProcess = data;
+  // quick-base64 (small / large)
+  const [quickResult, setQuickResult] = useState(0);
+  const [quickLargeResult, setQuickLargeResult] = useState(0);
+
+  // atob/btoa (small / large)
+  const [atobResult, setAtobResult] = useState(0);
+  const [atobLargeResult, setAtobLargeResult] = useState(0);
+
+  // decodeBuffer (small / large)
+  const [decodeBufferResult, setDecodeBufferResult] = useState(0);
+  const [decodeBufferLargeResult, setDecodeBufferLargeResult] = useState(0);
+
+  // encodeBuffer (small / large)
+  const [encodeBufferResult, setEncodeBufferResult] = useState(0);
+  const [encodeBufferLargeResult, setEncodeBufferLargeResult] = useState(0);
+
+  // fromByteArray / toByteArray (small / large)
+  const [fromByteArrayResult, setFromByteArrayResult] = useState(0);
+  const [fromByteArrayLargeResult, setFromByteArrayLargeResult] = useState(0);
+  const [toByteArrayResult, setToByteArrayResult] = useState(0);
+  const [toByteArrayLargeResult, setToByteArrayLargeResult] = useState(0);
+
+  const [processing, setProcessing] = useState(false);
+
+  // ── Nitro string ──────────────────────────────────────────────────────────
+
+  const runNitro = async (src: string): Promise<number> => {
+    let d = src;
     await sleep(1);
-    const startTime = performance.now();
-
-    for (let iter = 0; iter < 30; iter++) {
-      const decoded = encode(dataToProcess);
-      dataToProcess = decode(decoded);
-      if (dataToProcess !== data) {
-        throw new Error('Data does not match');
-      }
+    const t = performance.now();
+    for (let i = 0; i < 30; i++) {
+      const enc = encode(d);
+      d = decode(enc);
     }
-    const finishedTime = performance.now();
-    console.log(
-      'Nitro C++ done! took',
-      finishedTime - startTime,
-      'milliseconds'
-    );
-    setNativeBase64Result(finishedTime - startTime);
-    setProcessingNativeBase64(false);
+    return performance.now() - t;
   };
 
-  const handleJSBase64Press = async () => {
-    setProcessingJSBase64(true);
-    let dataToProcess = data;
-    await sleep(1);
-    const startTime = performance.now();
+  // ── quick-base64 ──────────────────────────────────────────────────────────
 
-    for (let iter = 0; iter < 30; iter++) {
-      const decoded = jsBase64.toByteArray(dataToProcess);
-      dataToProcess = jsBase64.fromByteArray(decoded);
+  const runQuick = async (src: string): Promise<number> => {
+    let d = src;
+    await sleep(1);
+    const t = performance.now();
+    for (let i = 0; i < 30; i++) {
+      const bytes = quickToByteArray(d);
+      d = quickFromByteArray(bytes);
     }
-    const finishedTime = performance.now();
-    console.log(
-      'base64-js done! took',
-      finishedTime - startTime,
-      'milliseconds'
-    );
-    setJSBase64Result(finishedTime - startTime);
-    setProcessingJSBase64(false);
+    return performance.now() - t;
   };
 
-  // atob/btoa benchmark (native browser API) - Small image
-  const handleAtobBtoaPress = async () => {
-    setProcessingAtobBtoa(true);
-    let dataToProcess = data;
-    await sleep(1);
-    const startTime = performance.now();
+  // ── atob/btoa ─────────────────────────────────────────────────────────────
 
+  const runAtob = async (src: string): Promise<number> => {
+    let d = src;
+    await sleep(1);
+    const t = performance.now();
     try {
-      for (let iter = 0; iter < 30; iter++) {
-        // btoa expects a binary string, atob returns a binary string
-        const decoded = atob(dataToProcess);
-        dataToProcess = btoa(decoded);
+      for (let i = 0; i < 30; i++) {
+        const bin = atob(d);
+        d = btoa(bin);
       }
-      const finishedTime = performance.now();
-      console.log(
-        'atob/btoa done! took',
-        finishedTime - startTime,
-        'milliseconds'
-      );
-      setAtobBtoaResult(finishedTime - startTime);
-    } catch (error) {
-      console.error('atob/btoa error:', error);
-      setAtobBtoaResult(-1); // Indicate error
+    } catch {
+      return -1;
     }
-    setProcessingAtobBtoa(false);
+    return performance.now() - t;
   };
 
-  // atob/btoa benchmark (native browser API) - Large image
-  const handleAtobBtoaLargePress = async () => {
-    setProcessingAtobBtoaLarge(true);
-    let dataToProcess = largeData;
+  // ── decodeBuffer ──────────────────────────────────────────────────────────
+
+  const runDecodeBuffer = async (src: string): Promise<number> => {
+    const encoded = encode(src);
     await sleep(1);
-    const startTime = performance.now();
-
-    try {
-      for (let iter = 0; iter < 30; iter++) {
-        const decoded = atob(dataToProcess);
-        dataToProcess = btoa(decoded);
-      }
-      const finishedTime = performance.now();
-      console.log(
-        'atob/btoa Large done! took',
-        finishedTime - startTime,
-        'milliseconds'
-      );
-      setAtobBtoaLargeResult(finishedTime - startTime);
-    } catch (error) {
-      console.error('atob/btoa Large error:', error);
-      setAtobBtoaLargeResult(-1); // Indicate error
-    }
-    setProcessingAtobBtoaLarge(false);
+    const t = performance.now();
+    for (let i = 0; i < 30; i++) decodeBuffer(encoded);
+    return performance.now() - t;
   };
 
-  // Large image base64-js benchmark
-  const handleJSBase64LargePress = async () => {
-    setProcessingJSBase64Large(true);
-    let dataToProcess = largeData;
+  // ── encodeBuffer ──────────────────────────────────────────────────────────
+
+  const runEncodeBuffer = async (src: string): Promise<number> => {
+    const binary = decodeBuffer(src);
     await sleep(1);
-    const startTime = performance.now();
-
-    for (let iter = 0; iter < 30; iter++) {
-      const decoded = jsBase64.toByteArray(dataToProcess);
-      dataToProcess = jsBase64.fromByteArray(decoded);
-    }
-    const finishedTime = performance.now();
-    console.log(
-      'base64-js Large done! took',
-      finishedTime - startTime,
-      'milliseconds'
-    );
-    setJSBase64LargeResult(finishedTime - startTime);
-    setProcessingJSBase64Large(false);
+    const t = performance.now();
+    for (let i = 0; i < 30; i++) encodeBuffer(binary);
+    return performance.now() - t;
   };
 
-  // Large Nitro C++ base64 benchmark
-  const handleObjcBase64Press = async () => {
-    setProcessingObjcBase64(true);
-    let dataToProcess = largeData;
+  // ── fromByteArray ─────────────────────────────────────────────────────────
+
+  const runFromByteArray = async (src: string): Promise<number> => {
+    const bytes = new Uint8Array(decodeBuffer(src));
     await sleep(1);
-    const startTime = performance.now();
-    for (let iter = 0; iter < 30; iter++) {
-      const decoded = encode(dataToProcess);
-      dataToProcess = decode(decoded);
-    }
-    const finishedTime = performance.now();
-    console.log(
-      'Nitro C++ Large done! took',
-      finishedTime - startTime,
-      'milliseconds'
-    );
-    setObjcBase64Result(finishedTime - startTime);
-    setProcessingObjcBase64(false);
+    const t = performance.now();
+    for (let i = 0; i < 30; i++) fromByteArray(bytes);
+    return performance.now() - t;
   };
 
-  const calculateSpeedup = (baseTime: number, compareTime: number) => {
-    if (!baseTime || !compareTime || compareTime <= 0) return '';
-    return `(${round(baseTime / compareTime, 2)}x faster)`;
+  // ── toByteArray ───────────────────────────────────────────────────────────
+
+  const runToByteArray = async (src: string): Promise<number> => {
+    const encoded = encode(src);
+    await sleep(1);
+    const t = performance.now();
+    for (let i = 0; i < 30; i++) toByteArray(encoded);
+    return performance.now() - t;
   };
+
+  // ── Run all ───────────────────────────────────────────────────────────────
+
+  const handleRunAll = async () => {
+    setProcessing(true);
+
+    const [n, nL, q, qL, a, aL, db, dbL, eb, ebL, fba, fbaL, tba, tbaL] =
+      await Promise.all([
+        runNitro(data),
+        runNitro(largeData),
+        runQuick(data),
+        runQuick(largeData),
+        runAtob(data),
+        runAtob(largeData),
+        runDecodeBuffer(data),
+        runDecodeBuffer(largeData),
+        runEncodeBuffer(data),
+        runEncodeBuffer(largeData),
+        runFromByteArray(data),
+        runFromByteArray(largeData),
+        runToByteArray(data),
+        runToByteArray(largeData),
+      ]);
+
+    setNitroResult(n);
+    setNitroLargeResult(nL);
+    setQuickResult(q);
+    setQuickLargeResult(qL);
+    setAtobResult(a);
+    setAtobLargeResult(aL);
+    setDecodeBufferResult(db);
+    setDecodeBufferLargeResult(dbL);
+    setEncodeBufferResult(eb);
+    setEncodeBufferLargeResult(ebL);
+    setFromByteArrayResult(fba);
+    setFromByteArrayLargeResult(fbaL);
+    setToByteArrayResult(tba);
+    setToByteArrayLargeResult(tbaL);
+
+    setProcessing(false);
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  const Row = ({
+    label,
+    ms,
+    base,
+  }: {
+    label: string;
+    ms: number;
+    base: number;
+  }) => (
+    <View style={styles.lib}>
+      <Text style={styles.heading}>{label}</Text>
+      <Text style={styles.result}>
+        {ms > 0
+          ? `${round(ms, 2)}ms ${speedup(ms, base)}`
+          : ms === -1
+            ? 'Not supported'
+            : ''}
+      </Text>
+    </View>
+  );
 
   return (
     <View>
-      <Text style={styles.sectionTitle}>Small Image (7KB) - 30 iterations</Text>
+      <Text style={styles.sectionTitle}>Small Image (7KB) — 30 iterations</Text>
 
       <View style={styles.lib}>
-        <Text style={styles.heading}>Nitro Simdutf C++</Text>
+        <Text style={styles.heading}>Nitro simdutf C++ (string)</Text>
         <Text style={styles.result}>
-          {nativeBase64Result > 0 ? `${round(nativeBase64Result, 2)}ms` : ''}
+          {nitroResult > 0 ? `${round(nitroResult, 2)}ms` : ''}
         </Text>
       </View>
-
-      <View style={styles.lib}>
-        <Text style={styles.heading}>base64-js (JS)</Text>
-        <Text style={styles.result}>
-          {jsBase64Result > 0
-            ? `${round(jsBase64Result, 2)}ms ${calculateSpeedup(jsBase64Result, nativeBase64Result)}`
-            : ''}
-        </Text>
-      </View>
-
-      <View style={styles.lib}>
-        <Text style={styles.heading}>atob/btoa (Native)</Text>
-        <Text style={styles.result}>
-          {atobBtoaResult > 0
-            ? `${round(atobBtoaResult, 2)}ms ${calculateSpeedup(atobBtoaResult, nativeBase64Result)}`
-            : atobBtoaResult === -1
-              ? 'Error/Not supported'
-              : ''}
-        </Text>
-      </View>
+      <Row
+        label="quick-base64 (Uint8Array)"
+        ms={quickResult}
+        base={nitroResult}
+      />
+      <Row label="atob/btoa (Hermes)" ms={atobResult} base={nitroResult} />
+      <Row
+        label="decodeBuffer (ArrayBuffer)"
+        ms={decodeBufferResult}
+        base={nitroResult}
+      />
+      <Row
+        label="encodeBuffer (ArrayBuffer)"
+        ms={encodeBufferResult}
+        base={nitroResult}
+      />
+      <Row
+        label="fromByteArray (Uint8Array)"
+        ms={fromByteArrayResult}
+        base={nitroResult}
+      />
+      <Row
+        label="toByteArray (Uint8Array)"
+        ms={toByteArrayResult}
+        base={nitroResult}
+      />
 
       <Text style={styles.sectionTitle}>
-        Large Image (1.3MB) - 30 iterations
+        Large Image (1.3MB) — 30 iterations
       </Text>
 
       <View style={styles.lib}>
-        <Text style={styles.heading}>Nitro Simdutf C++</Text>
+        <Text style={styles.heading}>Nitro simdutf C++ (string)</Text>
         <Text style={styles.result}>
-          {objcBase64Result > 0 ? `${round(objcBase64Result, 2)}ms` : ''}
+          {nitroLargeResult > 0 ? `${round(nitroLargeResult, 2)}ms` : ''}
         </Text>
       </View>
+      <Row
+        label="quick-base64 (Uint8Array)"
+        ms={quickLargeResult}
+        base={nitroLargeResult}
+      />
+      <Row
+        label="atob/btoa (Hermes)"
+        ms={atobLargeResult}
+        base={nitroLargeResult}
+      />
+      <Row
+        label="decodeBuffer (ArrayBuffer)"
+        ms={decodeBufferLargeResult}
+        base={nitroLargeResult}
+      />
+      <Row
+        label="encodeBuffer (ArrayBuffer)"
+        ms={encodeBufferLargeResult}
+        base={nitroLargeResult}
+      />
+      <Row
+        label="fromByteArray (Uint8Array)"
+        ms={fromByteArrayLargeResult}
+        base={nitroLargeResult}
+      />
+      <Row
+        label="toByteArray (Uint8Array)"
+        ms={toByteArrayLargeResult}
+        base={nitroLargeResult}
+      />
 
-      <View style={styles.lib}>
-        <Text style={styles.heading}>base64-js (JS)</Text>
-        <Text style={styles.result}>
-          {jsBase64LargeResult > 0
-            ? `${round(jsBase64LargeResult, 2)}ms ${calculateSpeedup(jsBase64LargeResult, objcBase64Result)}`
-            : ''}
-        </Text>
-      </View>
-
-      <View style={styles.lib}>
-        <Text style={styles.heading}>atob/btoa (Native)</Text>
-        <Text style={styles.result}>
-          {atobBtoaLargeResult > 0
-            ? `${round(atobBtoaLargeResult, 2)}ms ${calculateSpeedup(atobBtoaLargeResult, objcBase64Result)}`
-            : atobBtoaLargeResult === -1
-              ? 'Error/Not supported'
-              : ''}
-        </Text>
-      </View>
-
-      <Pressable
-        onPress={() => {
-          handleNativeBase64Press();
-          handleJSBase64Press();
-          handleAtobBtoaPress();
-          handleObjcBase64Press();
-          handleJSBase64LargePress();
-          handleAtobBtoaLargePress();
-        }}
-        style={styles.button}
-      >
+      <Pressable onPress={handleRunAll} style={styles.button}>
         <Text style={styles.pressable}>
-          {processingNativeBase64 ||
-          processingJSBase64 ||
-          processingObjcBase64 ||
-          processingAtobBtoa ||
-          processingAtobBtoaLarge ||
-          processingJSBase64Large
-            ? 'Processing...'
-            : 'Run Benchmarks'}
+          {processing ? 'Processing...' : 'Run Benchmarks'}
         </Text>
       </Pressable>
     </View>
@@ -262,11 +296,6 @@ const Benchmarks2 = () => {
 export default Benchmarks2;
 
 const styles = StyleSheet.create({
-  box: {
-    width: 60,
-    height: 60,
-    marginVertical: 20,
-  },
   lib: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -291,11 +320,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 20,
     borderRadius: 8,
-  },
-  speedup: {
-    marginVertical: 5,
-    fontSize: 18,
-    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 16,

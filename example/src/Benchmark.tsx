@@ -38,7 +38,7 @@ const NitroBase64Demo = () => {
     try {
       // First encode to get valid base64
       const encoded = encode(inputText, urlSafeMode);
-      const result = decode(encoded, urlSafeMode);
+      const result = decode(encoded);
       logResult(`Nitro Decode (urlSafe: ${urlSafeMode})`, result);
       logResult('Round Trip Success', `${result === inputText ? 'YES' : 'NO'}`);
       Alert.alert(
@@ -57,14 +57,14 @@ const NitroBase64Demo = () => {
       const nitroEncoded = encode(inputText, false);
       logResult('Nitro encode()', nitroEncoded);
 
-      const nitroDecoded = decode(nitroEncoded, false);
+      const nitroDecoded = decode(nitroEncoded);
       logResult('Nitro decode()', nitroDecoded);
 
       // Test URL-safe version
       const nitroUrlSafe = encode(inputText, true);
       logResult('Nitro URL-safe encode()', nitroUrlSafe);
 
-      const nitroUrlSafeDecoded = decode(nitroUrlSafe, true);
+      const nitroUrlSafeDecoded = decode(nitroUrlSafe);
       logResult('Nitro URL-safe decode()', nitroUrlSafeDecoded);
 
       // Test if they match
@@ -101,7 +101,7 @@ const NitroBase64Demo = () => {
     testCases.forEach((testCase) => {
       try {
         const encoded = encode(testCase.data, urlSafeMode);
-        const decoded = decode(encoded, urlSafeMode);
+        const decoded = decode(encoded);
         const success = decoded === testCase.data;
         if (success) passCount++;
         logResult(
@@ -128,7 +128,7 @@ const NitroBase64Demo = () => {
 
       try {
         const encoded = encode(largeText, urlSafeMode);
-        const decoded = decode(encoded, urlSafeMode);
+        const decoded = decode(encoded);
         const endTime = Date.now();
         const duration = endTime - startTime;
 
