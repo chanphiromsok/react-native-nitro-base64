@@ -1,6 +1,6 @@
 {
   "name": "react-native-nitro-base64",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "The fastest Base64 library for React Native, powered by simdutf SIMD C++ and Nitro Modules",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
