@@ -1,107 +1,149 @@
-# NitroBase64
+# react-native-nitro-base64 ⚡
 
-A high-performance, cross-platform Base64 encoding/decoding module for React Native, powered by C++ and simdutf. Implements WHATWG forgiving-base64 and supports both standard and URL-safe variants.
+The fastest Base64 library for React Native — powered by [simdutf](https://github.com/simdutf/simdutf) SIMD C++ and [Nitro Modules](https://github.com/mrousavy/nitro).
 
-| iPhone                                            | Android                                             |
-| ------------------------------------------------- | --------------------------------------------------- |
+Processes a 1.3MB image **26x faster** than `atob`/`btoa` and **1.8x faster** than `react-native-quick-base64`.
+
+| iPhone | Android |
+| --- | --- |
 | ![iPhone](./docs/ios.png) | ![Android](./docs/android.png) |
-## Features
-- Fast C++ implementation using [simdutf](https://github.com/simdutf/simdutf)
-- WHATWG forgiving-base64 compliance (removes whitespace, optional padding)
-- Supports both standard and URL-safe base64
-- Consistent API for iOS and Android
-- Detailed error handling
 
-## Installation
+---
+
+## 🤔 Why this library?
+
+Most React Native base64 libraries hit the same bottlenecks:
+
+- 🐢 **Pure JS** (`base64-js`) — slow. No native acceleration.
+- ⚠️ **`atob`/`btoa`** — fast for tiny strings, falls apart on binary data at scale.
+- ⚠️ **String-based native** — crosses the JSI bridge as UTF-16, doubling memory for binary payloads.
+
+`react-native-nitro-base64` uses SIMD instructions (AVX-512 on x86, NEON on Apple Silicon) to process 64 bytes per CPU instruction, and exposes `ArrayBuffer`/`Uint8Array` APIs that bypass string marshaling entirely.
+
+### 📊 Benchmark — 30 iterations, iPhone (Apple Silicon)
+
+> Tested against `react-native-quick-base64@3.0.0`
+
+
+#### Small image (7KB)
+
+| Library | Time | vs. nitro-base64 |
+|---|---|---|
+| ⚡ **nitro-base64** `decodeBuffer` / `fromByteArray` | **0.06ms** | — |
+| react-native-quick-base64 | 0.11ms | 1.8x slower |
+| atob / btoa (Hermes) | 1.04ms | 17x slower |
+
+#### Large image (1.3MB)
+
+| Library | Time | vs. nitro-base64 |
+|---|---|---|
+| ⚡ **nitro-base64** `decodeBuffer` / `fromByteArray` | **7.5ms** | — |
+| react-native-quick-base64 | 13.6ms | 1.8x slower |
+| atob / btoa (Hermes) | 203ms | 26x slower |
+
+---
+
+## 📦 Installation
 
 ```sh
 yarn add react-native-nitro-base64
 yarn add react-native-nitro-modules
 ```
 
-### Linking
-This module uses [react-native-nitro-modules](https://github.com/mrousavy/nitro). Follow Nitro's setup instructions for autolinking and native builds.
+Then follow [Nitro's setup guide](https://nitro.margelo.com) for autolinking.
 
-## API
+### 🔧 Setup
 
-| Function | Input | Output | Use case |
-|---|---|---|---|
-| `encode(str, urlSafe?)` | binary string | base64 string | Text/JWT encoding |
-| `decode(base64)` | base64 string | binary string | Text/JWT decoding — accepts standard and URL-safe automatically |
-| `encodeBuffer(ArrayBuffer, urlSafe?)` | ArrayBuffer | base64 string | Image/file → base64 |
-| `decodeBuffer(base64)` | base64 string | ArrayBuffer | base64 → raw binary — accepts standard and URL-safe automatically |
-| `fromByteArray(Uint8Array, urlSafe?)` | Uint8Array | base64 string | Crypto/hashing output → base64 |
-| `toByteArray(base64)` | base64 string | Uint8Array | base64 → typed binary — accepts standard and URL-safe automatically |
+Call `install()` once before your app mounts:
 
-### Which one should I use?
+```js
+// index.js
+import { install } from 'react-native-nitro-base64';
+import { AppRegistry } from 'react-native';
+import App from './src/App';
+import { name as appName } from './app.json';
 
-**Working with images?** Use `encodeBuffer` / `decodeBuffer`.
-
-Images are binary data. Passing them through a JS string crosses the JSI bridge as UTF-16, doubling memory and adding overhead. `ArrayBuffer` avoids that — raw bytes go directly to C++.
-
-```typescript
-import { encodeBuffer, decodeBuffer } from 'react-native-nitro-base64';
-import { readFile } from 'react-native-fs';
-
-// Image file → base64 (for API upload)
-const bytes = await readFile(imagePath, 'ascii'); // or use arrayBuffer APIs
-const base64 = encodeBuffer(buffer); // ArrayBuffer → base64
-
-// base64 from API → display in <Image>
-const buffer = decodeBuffer(base64String); // base64 → ArrayBuffer
+install();
+AppRegistry.registerComponent(appName, () => App);
 ```
 
-**Working with text / JWT?** Use `encode` / `decode`.
+---
 
-```typescript
+## 📖 API
+
+| Function | Input → Output | Notes |
+|---|---|---|
+| `encode(str, urlSafe?)` | string → base64 string | URL-safe optional |
+| `decode(base64)` | base64 string → string | Auto-detects standard & URL-safe |
+| `encodeBuffer(ArrayBuffer, urlSafe?)` | ArrayBuffer → base64 string | 🚀 Zero-copy, fastest for images |
+| `decodeBuffer(base64)` | base64 string → ArrayBuffer | 🚀 Zero-copy, fastest for images |
+| `fromByteArray(Uint8Array, urlSafe?)` | Uint8Array → base64 string | Drop-in for `react-native-quick-base64` |
+| `toByteArray(base64)` | base64 string → Uint8Array | Drop-in for `react-native-quick-base64` |
+
+---
+
+## 🚀 Usage
+
+### 🖼️ Images & files — `encodeBuffer` / `decodeBuffer`
+
+Images are binary data. Sending binary through a JS string crosses the JSI bridge as UTF-16, doubling memory. `ArrayBuffer` skips that entirely — raw bytes go straight to C++.
+
+```ts
+import { encodeBuffer, decodeBuffer } from 'react-native-nitro-base64';
+
+// Upload image to API
+const response = await fetch(imageUri);
+const buffer = await response.arrayBuffer();
+const base64 = encodeBuffer(buffer); // → "iVBORw0KGgo..."
+
+// Decode API response for <Image> component
+const buffer = decodeBuffer(base64String); // → ArrayBuffer
+```
+
+### 🔑 Text & JWT — `encode` / `decode`
+
+```ts
 import { encode, decode } from 'react-native-nitro-base64';
 
-const encoded = encode('Hello World!'); // "SGVsbG8gV29ybGQh"
-const decoded = decode(encoded);       // "Hello World!"
+const encoded = encode('Hello World!');  // "SGVsbG8gV29ybGQh"
+const decoded = decode(encoded);         // "Hello World!"
 
-// URL-safe (JWT, URL params)
+// URL-safe for JWT / URL params
 const token = encode(payload, true);
 ```
 
-**Working with Web Crypto / hashing?** Use `fromByteArray` / `toByteArray`.
+### 🔐 Web Crypto & hashing — `fromByteArray` / `toByteArray`
 
-Web Crypto APIs (`crypto.subtle`) return `Uint8Array`. These are drop-in compatible with `react-native-quick-base64`.
+Drop-in replacement for `react-native-quick-base64`. Same API, faster engine.
 
-```typescript
+```ts
 import { fromByteArray, toByteArray } from 'react-native-nitro-base64';
 
-// Hash → base64
+// SHA-256 hash → base64
 const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
 const encoded = fromByteArray(hash);
 
-// base64 → bytes for TextDecoder
+// base64 → text
 const bytes = toByteArray(base64String);
 const text = new TextDecoder().decode(bytes);
 ```
 
-## Setup
+---
 
-```javascript
-// index.js
-import { install } from 'react-native-nitro-base64';
-import { AppRegistry } from 'react-native';
-import { name as appName } from './app.json';
-import App from './src/App';
+## 📱 Platform Support
 
-install(); // call before app mounts
-AppRegistry.registerComponent(appName, () => App);
-```
+| Platform | Engine |
+|---|---|
+| iOS | C++ (simdutf, NEON SIMD) |
+| Android | C++ (simdutf, NEON / AVX2 SIMD) |
 
-## Platform Support
-- **iOS:** C++ implementation via simdutf
-- **Android:** C++ implementation via simdutf
+---
 
-## Error Handling
-Throws descriptive errors for invalid base64 input, remainder issues, or extra bits in padding.
+## 📄 License
 
-## License
 MIT
 
-## Credits
-- [simdutf](https://github.com/simdutf/simdutf)
-- [Nitro Modules](https://github.com/mrousavy/nitro)
+## 🙏 Credits
+
+- [simdutf](https://github.com/simdutf/simdutf) — SIMD-accelerated Unicode & Base64
+- [Nitro Modules](https://github.com/mrousavy/nitro) — JSI native module framework
